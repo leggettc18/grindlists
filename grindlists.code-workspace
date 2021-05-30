@@ -1,13 +1,16 @@
 {
 	"folders": [
 		{
-			"path": "."
-		},
-		{
+			"name": "api",
 			"path": "api"
 		},
 		{
+			"name": "web",
 			"path": "web"
+		},
+		{
+			"name": "grindlists",
+			"path": "."
 		}
 	],
 	"settings": {
