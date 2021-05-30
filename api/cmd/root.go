@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 
-	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 )
 
@@ -75,14 +75,20 @@ func initConfig() {
 		// Search config in the current directory with the name "config"
 		viper.AddConfigPath(".")
 		viper.SetConfigName("config")
+		// If a config file is found, read it in.
+		readConfig()
 
 		// Search config in home directory with name ".grindlists" (without extension).
 		viper.AddConfigPath(home)
 		viper.SetConfigName(".grindlists")
+		// If a config file is found, read it in.
+		readConfig()
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
+}
 
+func readConfig() {
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
