@@ -19,7 +19,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+
+	"github.com/leggettc18/grindlists/api/app"
 )
 
 // serveCmd represents the serve command
@@ -34,7 +35,11 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("serve called")
-		fmt.Println(viper.GetInt("server.port"))
+		app, err := app.New()
+		if err != nil {
+			cobra.CheckErr(err)
+		}
+		fmt.Println(app.Config.Server.Port)
 	},
 }
 
