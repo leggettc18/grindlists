@@ -17,9 +17,13 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 
+	"github.com/leggettc18/grindlists/api/api"
 	"github.com/leggettc18/grindlists/api/app"
 )
 
@@ -33,13 +37,21 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		fmt.Println("serve called")
 		app, err := app.New()
 		if err != nil {
-			cobra.CheckErr(err)
+			return err
 		}
 		fmt.Println(app.Config.Server.Port)
+		api, err := api.New(app)
+		if err != nil {
+			return err
+		}
+		log.Print(api.App.Config.Server.Port)
+		consoleLog := zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout})
+		consoleLog.Info().Timestamp().Msgf("Serving API at port %d", api.App.Config.Server.Port)
+		return nil
 	},
 }
 
