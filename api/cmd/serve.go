@@ -17,10 +17,7 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 
 	"github.com/leggettc18/grindlists/api/api"
@@ -48,9 +45,7 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			return err
 		}
-		log.Print(api.App.Config.Server.Port)
-		consoleLog := zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout})
-		consoleLog.Info().Timestamp().Msgf("Serving API at port %d", api.App.Config.Server.Port)
+		app.ConsoleLogger.Info().Timestamp().Msgf("Serving API at port %d", api.App.Config.Server.Port)
 		return nil
 	},
 }
