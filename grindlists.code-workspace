@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "api"
+		},
+		{
+			"path": "web"
+		}
+	],
+	"settings": {
+		"mitLicenseAdder.owner": "Christopher Leggett",
+		"git.ignoreLimitWarning": true
+	}
+}
