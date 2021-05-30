@@ -16,8 +16,16 @@ limitations under the License.
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"sync"
+	"time"
 
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 
 	"github.com/leggettc18/grindlists/api/api"
@@ -35,19 +43,69 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("serve called")
 		app, err := app.New()
 		if err != nil {
 			return err
 		}
-		fmt.Println(app.Config.Server.Port)
 		api, err := api.New(app)
 		if err != nil {
 			return err
 		}
-		app.ConsoleLogger.Info().Timestamp().Msgf("Serving API at port %d", api.App.Config.Server.Port)
+		ctx, cancel := context.WithCancel(context.Background())
+		go func() {
+			ch := make(chan os.Signal, 1)
+			signal.Notify(ch, os.Interrupt)
+			<-ch
+			app.ConsoleLogger.Info().Msg("signal caught. shutting down...")
+			cancel()
+		}()
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			defer cancel()
+			serveAPI(ctx, api)
+		}()
+
+		wg.Wait()
 		return nil
 	},
+}
+
+func serveAPI(ctx context.Context, api *api.API) {
+	router := mux.NewRouter()
+	api.Init(router)
+
+	var server *http.Server
+	var handler http.Handler
+
+	cors := handlers.CORS(
+		handlers.AllowedOrigins([]string{"*"}),
+		handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "OPTIONS"}),
+		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
+	)
+
+	handler = cors(router)
+
+	server = &http.Server{
+		Addr: fmt.Sprintf(":%d", api.App.Config.Server.Port),
+		Handler: handler,
+		ReadTimeout: 2 * time.Minute,
+	}
+
+	done := make(chan struct{})
+	go func() {
+		<-ctx.Done()
+		if err := server.Shutdown(context.Background()); err != nil {
+			api.App.ConsoleLogger.Error().Err(err).Msg("Error occurred during server shutdown")
+		}
+		<-done
+	}()
+
+	api.App.ConsoleLogger.Info().Msgf("serving api at http://127.0.0.1:%d", api.App.Config.Server.Port)
+	if err := server.ListenAndServe(); err != http.ErrServerClosed {
+		api.App.ConsoleLogger.Error().Err(err).Msg("Error occured during server startup.")
+	}
 }
 
 func init() {
