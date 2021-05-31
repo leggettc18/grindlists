@@ -2,20 +2,10 @@ import { useQuery, gql } from "@apollo/client";
 import styles from "../styles/Home.module.css";
 
 const QUERY = gql`
-  query Countries {
-    countries {
-      code
-      name
-      emoji
-    }
+  query Hello {
+    hello
   }
 `;
-
-interface Country {
-  code: number;
-  name: string;
-  emoji: string;
-}
 
 export default function Countries() {
   const { data, loading, error } = useQuery(QUERY);
@@ -29,16 +19,14 @@ export default function Countries() {
     return null;
   }
 
-  const countries = data.countries.slice(0, 4);
+  const hellos = [data.hello, data.hello, data.hello, data.hello];
 
   return (
     <div className={styles.grid}>
-      {countries.map((country: Country) => (
-        <div key={country.code} className={styles.card}>
-          <h3>{country.name}</h3>
-          <p>
-            {country.code} - {country.emoji}
-          </p>
+      {hellos.map((hello) => (
+        <div className={styles.card}>
+          <h3>{hello}</h3>
+          <p>{hello}</p>
         </div>
       ))}
     </div>

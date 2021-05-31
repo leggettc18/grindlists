@@ -1,7 +1,7 @@
 import Head from "next/head";
 import styles from "../styles/Home.module.css";
 import ClientOnly from "../components/ClientOnly";
-import Countries from "../components/Countries";
+import Hello from "../components/Hello";
 
 export default function ClientSide() {
   return (
@@ -16,7 +16,7 @@ export default function ClientSide() {
           Welcome to <a href="https://nextjs.org">Next.js!</a>
         </h1>
         <ClientOnly>
-          <Countries />
+          <Hello />
         </ClientOnly>
       </main>
 
