@@ -64,10 +64,9 @@ DELETE FROM items
 WHERE id = $1
 RETURNING *;
 
--- name: SetListItem :one
+-- name: SetListItem :exec
 INSERT INTO list_items (quantity, collected, list_id, item_id, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, $5)
-RETURNING *;
+VALUES ($1, $2, $3, $4, $5, $5);
 
 -- name: UpdateListItem :exec
 UPDATE list_items

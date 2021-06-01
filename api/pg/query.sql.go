@@ -313,10 +313,9 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
-const setListItem = `-- name: SetListItem :one
+const setListItem = `-- name: SetListItem :exec
 INSERT INTO list_items (quantity, collected, list_id, item_id, created_at, updated_at)
 VALUES ($1, $2, $3, $4, $5, $5)
-RETURNING id, quantity, collected, list_id, item_id, created_at, updated_at, deleted_at
 `
 
 type SetListItemParams struct {
@@ -327,26 +326,15 @@ type SetListItemParams struct {
 	CreatedAt time.Time
 }
 
-func (q *Queries) SetListItem(ctx context.Context, arg SetListItemParams) (ListItem, error) {
-	row := q.db.QueryRowContext(ctx, setListItem,
+func (q *Queries) SetListItem(ctx context.Context, arg SetListItemParams) error {
+	_, err := q.db.ExecContext(ctx, setListItem,
 		arg.Quantity,
 		arg.Collected,
 		arg.ListID,
 		arg.ItemID,
 		arg.CreatedAt,
 	)
-	var i ListItem
-	err := row.Scan(
-		&i.ID,
-		&i.Quantity,
-		&i.Collected,
-		&i.ListID,
-		&i.ItemID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.DeletedAt,
-	)
-	return i, err
+	return err
 }
 
 const unsetListItem = `-- name: UnsetListItem :exec
