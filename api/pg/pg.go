@@ -25,11 +25,16 @@ type Repository interface {
 	UpdateLists(ctx context.Context, arg UpdateListParams) (List, error)
 
 	// item queries
-	CreateItems(ctx context.Context, arg CreateItemParams, listIDs []int64) (*Item, error)
-	DeleteItems(ctx context.Context, id int64) (Item, error)
-	GetItems(ctx context.Context, id int64) (Item, error)
+	DeleteItem(ctx context.Context, id int64) (Item, error)
+	GetItem(ctx context.Context, id int64) (Item, error)
 	ListItems(ctx context.Context) ([]Item, error)
-	UpdateItems(ctx context.Context, arg UpdateItemParams, listIDs []int64) (*Item, error)
+	UpdateItem(ctx context.Context, arg UpdateItemParams) (*Item, error)
+
+	// listItem queries
+	CreateListItem(ctx context.Context, itemArg CreateItemParams, listItemArg SetListItemParams)
+	SetListItem(ctx context.Context, arg SetListItemParams) (error)
+	UpdateListItem(ctx context.Context, arg UpdateListItemParams) (error)
+	UnsetListItem(ctx context.Context, id int64)
 }
 
 type repoSvc struct {
@@ -55,20 +60,18 @@ func (r *repoSvc) withTx(ctx context.Context, txFn func(*Queries) error) error {
 }
 
 // CreateItem creates an item and links it to a list right away
-func (r *repoSvc) CreateItem(ctx context.Context, itemArg CreateItemParams, listIDs []int64) (*Item, error) {
+func (r *repoSvc) CreateListItem(ctx context.Context, itemArg CreateItemParams, listItemArg SetListItemParams) (*Item, error) {
 	item := new(Item)
 	err := r.withTx(ctx, func(q *Queries) error {
 		res, err := q.CreateItem(ctx, itemArg)
 		if err != nil {
 			return err
 		}
-		for _, listID := range listIDs {
-			if err := q.SetListItem(ctx, SetListItemParams{
-				ListID: listID,
-				ItemID: res.ID,
-			}); err != nil {
-				return err
-			}
+		if err := q.SetListItem(ctx, SetListItemParams{
+			ListID: listItemArg.ListID,
+			ItemID: res.ID,
+		}); err != nil {
+			return err
 		}
 		item = &res
 		return nil
