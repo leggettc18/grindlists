@@ -1,0 +1,74 @@
+type User {
+    id: ID!
+    name: String!
+    email: String!
+    lists: [List]!
+}
+
+type List {
+    id: ID!
+    name: String!
+    user: User!
+    items: [ListItem]!
+}
+
+type Item {
+    id: ID!
+    name: String!
+    source: String!
+}
+
+type ListItem {
+    id: ID!
+    quantity: Int
+    collected: Boolean!
+    list: List!
+    item: Item!
+}
+
+type Query {
+    user(id: ID!): User
+    users: [User!]!
+    list(id: ID!): List
+    lists: [List!]!
+    item(id: ID!): Item
+    items: [Item!]!
+}
+
+type Mutation {
+    createUser(data: UserInput!): User!
+    updateUser(id: ID!, data: UserInput!): User!
+    deleteUser(id: ID!): User!
+    createList(data: ListInput!): List!
+    updateList(id: ID!, data: ListInput!): List!
+    deleteList(id: ID!): List!
+    createListItem(itemData: ItemInput!, listItemdata: ListItemInput!): Item!
+    updateItem(id: ID!, data: ItemInput!): Item!
+    deleteItem(id: ID!): Item!
+    setListItem(data: ListItemInput!): ListItem!
+    updateListItem(id: ID!, data: ListItemInput!): ListItem!
+    unsetListItem(id: ID!): ListItem!
+}
+
+input UserInput {
+    name: String!
+    email: String!
+    password: String!
+}
+
+input ListInput {
+    name: String!
+    user_id: ID!
+}
+
+input ItemInput {
+    name: String!
+    source: String!
+}
+
+input ListItemInput {
+    quantity: String
+    collected: Boolean!
+    list_id: ID!
+    item_id: ID!
+}
