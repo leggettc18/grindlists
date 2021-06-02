@@ -22,19 +22,19 @@ type Repository interface {
 	DeleteList(ctx context.Context, id int64) (List, error)
 	GetList(ctx context.Context, id int64) (List, error)
 	ListLists(ctx context.Context) ([]List, error)
-	UpdateLists(ctx context.Context, arg UpdateListParams) (List, error)
+	UpdateList(ctx context.Context, arg UpdateListParams) (List, error)
 
 	// item queries
 	DeleteItem(ctx context.Context, id int64) (Item, error)
 	GetItem(ctx context.Context, id int64) (Item, error)
 	ListItems(ctx context.Context) ([]Item, error)
-	UpdateItem(ctx context.Context, arg UpdateItemParams) (*Item, error)
+	UpdateItem(ctx context.Context, arg UpdateItemParams) (Item, error)
 
 	// listItem queries
-	CreateListItem(ctx context.Context, itemArg CreateItemParams, listItemArg SetListItemParams)
+	CreateListItem(ctx context.Context, itemArg CreateItemParams, listItemArg SetListItemParams) (*Item, error)
 	SetListItem(ctx context.Context, arg SetListItemParams) (error)
 	UpdateListItem(ctx context.Context, arg UpdateListItemParams) (error)
-	UnsetListItem(ctx context.Context, id int64)
+	UnsetListItem(ctx context.Context, id int64) (error)
 }
 
 type repoSvc struct {
@@ -77,4 +77,18 @@ func (r *repoSvc) CreateListItem(ctx context.Context, itemArg CreateItemParams, 
 		return nil
 	})
 	return item, err
+}
+
+// NewRepository returns an implementation of the Repository interface.
+func NewRepository(db *sql.DB) Repository {
+	return &repoSvc {
+		Queries: New(db),
+		db: db,
+	}
+}
+
+// Open opens a database specified by the data source name.
+// Format: "host=foo port=5432 user=bar password=baz dbname=qux sslmode=disable"
+func Open(dataSourceName string) (*sql.DB, error) {
+	return sql.Open("postgres", dataSourceName)
 }
