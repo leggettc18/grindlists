@@ -21,6 +21,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var dir string
+
 // migrateCmd represents the migrate command
 var migrateCmd = &cobra.Command{
 	Use:   "migrate",
@@ -40,6 +42,7 @@ func init() {
 	rootCmd.AddCommand(migrateCmd)
 
 	// Here you will define your flags and configuration settings.
+	migrateCmd.PersistentFlags().StringVar(&dir, "dir", "./migrations", "location to place migration files.")
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
