@@ -4,7 +4,7 @@
         {
             "path": "pg",
             "queries": "./query.sql",
-            "schema": "./schema.sql"
+            "schema": "./migrations"
         }
     ]
 }
