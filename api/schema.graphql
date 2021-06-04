@@ -36,7 +36,8 @@ type Query {
 }
 
 type Mutation {
-    createUser(data: UserInput!): User!
+    login(data: LoginInput!): User!
+    register(data: UserInput!): User!
     updateUser(id: ID!, data: UserInput!): User!
     deleteUser(id: ID!): User!
     createList(data: ListInput!): List!
@@ -71,4 +72,9 @@ input ListItemInput {
     collected: Boolean!
     list_id: ID!
     item_id: ID!
+}
+
+input LoginInput {
+    email: String!
+    password: String!
 }

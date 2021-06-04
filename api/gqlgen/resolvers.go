@@ -35,7 +35,15 @@ func (r *listItemResolver) Item(ctx context.Context, obj *pg.ListItem) (*pg.Item
 	panic("not implemented")
 }
 
-func (r *mutationResolver) CreateUser(ctx context.Context, data UserInput) (*pg.User, error) {
+func (r *mutationResolver) Login(ctx context.Context, data LoginInput) (*pg.User, error) {
+	user, err := r.Repository.GetUser(ctx, 1)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *mutationResolver) Register(ctx context.Context, data UserInput) (*pg.User, error) {
 	user, err := r.Repository.CreateUser(ctx, pg.CreateUserParams{
 		Name: data.Name,
 		Email: data.Email,

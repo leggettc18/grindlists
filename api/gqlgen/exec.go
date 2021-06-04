@@ -70,10 +70,11 @@ type ComplexityRoot struct {
 	Mutation struct {
 		CreateList     func(childComplexity int, data ListInput) int
 		CreateListItem func(childComplexity int, itemData ItemInput, listItemdata ListItemInput) int
-		CreateUser     func(childComplexity int, data UserInput) int
 		DeleteItem     func(childComplexity int, id int64) int
 		DeleteList     func(childComplexity int, id int64) int
 		DeleteUser     func(childComplexity int, id int64) int
+		Login          func(childComplexity int, data LoginInput) int
+		Register       func(childComplexity int, data UserInput) int
 		SetListItem    func(childComplexity int, data ListItemInput) int
 		UnsetListItem  func(childComplexity int, id int64) int
 		UpdateItem     func(childComplexity int, id int64, data ItemInput) int
@@ -110,7 +111,8 @@ type ListItemResolver interface {
 	Item(ctx context.Context, obj *pg.ListItem) (*pg.Item, error)
 }
 type MutationResolver interface {
-	CreateUser(ctx context.Context, data UserInput) (*pg.User, error)
+	Login(ctx context.Context, data LoginInput) (*pg.User, error)
+	Register(ctx context.Context, data UserInput) (*pg.User, error)
 	UpdateUser(ctx context.Context, id int64, data UserInput) (*pg.User, error)
 	DeleteUser(ctx context.Context, id int64) (*pg.User, error)
 	CreateList(ctx context.Context, data ListInput) (*pg.List, error)
@@ -258,18 +260,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateListItem(childComplexity, args["itemData"].(ItemInput), args["listItemdata"].(ListItemInput)), true
 
-	case "Mutation.createUser":
-		if e.complexity.Mutation.CreateUser == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_createUser_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.CreateUser(childComplexity, args["data"].(UserInput)), true
-
 	case "Mutation.deleteItem":
 		if e.complexity.Mutation.DeleteItem == nil {
 			break
@@ -305,6 +295,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteUser(childComplexity, args["id"].(int64)), true
+
+	case "Mutation.login":
+		if e.complexity.Mutation.Login == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_login_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Login(childComplexity, args["data"].(LoginInput)), true
+
+	case "Mutation.register":
+		if e.complexity.Mutation.Register == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_register_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Register(childComplexity, args["data"].(UserInput)), true
 
 	case "Mutation.setListItem":
 		if e.complexity.Mutation.SetListItem == nil {
@@ -565,7 +579,8 @@ type Query {
 }
 
 type Mutation {
-    createUser(data: UserInput!): User!
+    login(data: LoginInput!): User!
+    register(data: UserInput!): User!
     updateUser(id: ID!, data: UserInput!): User!
     deleteUser(id: ID!): User!
     createList(data: ListInput!): List!
@@ -600,6 +615,11 @@ input ListItemInput {
     collected: Boolean!
     list_id: ID!
     item_id: ID!
+}
+
+input LoginInput {
+    email: String!
+    password: String!
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -639,21 +659,6 @@ func (ec *executionContext) field_Mutation_createList_args(ctx context.Context, 
 	if tmp, ok := rawArgs["data"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
 		arg0, err = ec.unmarshalNListInput2githubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋgqlgenᚐListInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["data"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 UserInput
-	if tmp, ok := rawArgs["data"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
-		arg0, err = ec.unmarshalNUserInput2githubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋgqlgenᚐUserInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -704,6 +709,36 @@ func (ec *executionContext) field_Mutation_deleteUser_args(ctx context.Context, 
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 LoginInput
+	if tmp, ok := rawArgs["data"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
+		arg0, err = ec.unmarshalNLoginInput2githubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋgqlgenᚐLoginInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["data"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_register_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 UserInput
+	if tmp, ok := rawArgs["data"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
+		arg0, err = ec.unmarshalNUserInput2githubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋgqlgenᚐUserInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["data"] = arg0
 	return args, nil
 }
 
@@ -1348,7 +1383,7 @@ func (ec *executionContext) _ListItem_item(ctx context.Context, field graphql.Co
 	return ec.marshalNItem2ᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐItem(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_createUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1365,7 +1400,7 @@ func (ec *executionContext) _Mutation_createUser(ctx context.Context, field grap
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_createUser_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_login_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -1373,7 +1408,49 @@ func (ec *executionContext) _Mutation_createUser(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateUser(rctx, args["data"].(UserInput))
+		return ec.resolvers.Mutation().Login(rctx, args["data"].(LoginInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*pg.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_register(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_register_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Register(rctx, args["data"].(UserInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3472,6 +3549,34 @@ func (ec *executionContext) unmarshalInputListItemInput(ctx context.Context, obj
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj interface{}) (LoginInput, error) {
+	var it LoginInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "email":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+			it.Email, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "password":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
+			it.Password, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUserInput(ctx context.Context, obj interface{}) (UserInput, error) {
 	var it UserInput
 	var asMap = obj.(map[string]interface{})
@@ -3699,8 +3804,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "createUser":
-			out.Values[i] = ec._Mutation_createUser(ctx, field)
+		case "login":
+			out.Values[i] = ec._Mutation_login(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "register":
+			out.Values[i] = ec._Mutation_register(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -4403,6 +4513,11 @@ func (ec *executionContext) marshalNListItem2ᚖgithubᚗcomᚋleggettc18ᚋgrin
 
 func (ec *executionContext) unmarshalNListItemInput2githubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋgqlgenᚐListItemInput(ctx context.Context, v interface{}) (ListItemInput, error) {
 	res, err := ec.unmarshalInputListItemInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNLoginInput2githubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋgqlgenᚐLoginInput(ctx context.Context, v interface{}) (LoginInput, error) {
+	res, err := ec.unmarshalInputLoginInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
