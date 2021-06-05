@@ -8,7 +8,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/99designs/gqlgen/graphql"
+	"github.com/leggettc18/grindlists/api/auth"
 	"github.com/leggettc18/grindlists/api/pg"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 type Resolver struct{
@@ -40,14 +43,32 @@ func (r *mutationResolver) Login(ctx context.Context, data LoginInput) (*pg.User
 	if err != nil {
 		return nil, err
 	}
+	valid, err := auth.VerifyPasswordHash(data.Password, user.HashedPassword)
+	if err != nil {
+		return nil, err
+	}
+	if !valid {
+		graphql.AddError(ctx, &gqlerror.Error{
+			Path: graphql.GetPath(ctx),
+			Message: "Incorrect Password.",
+			Extensions: map[string]interface{}{
+				"field": "password",
+			},
+		})
+		return nil, nil
+	}
 	return &user, nil
 }
 
 func (r *mutationResolver) Register(ctx context.Context, data UserInput) (*pg.User, error) {
+	hashedPassword, err := auth.GetPasswordHash(data.Password)
+	if err != nil {
+		return nil, err
+	}
 	user, err := r.Repository.CreateUser(ctx, pg.CreateUserParams{
 		Name: data.Name,
 		Email: data.Email,
-		HashedPassword: []byte(data.Password), // will replace with actual hashed password once graphql endpoint is working.
+		HashedPassword: hashedPassword,
 		CreatedAt: time.Now(),
 	})
 	if err != nil {
