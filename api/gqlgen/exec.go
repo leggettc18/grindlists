@@ -611,7 +611,7 @@ input ItemInput {
 }
 
 input ListItemInput {
-    quantity: String
+    quantity: Int
     collected: Boolean!
     list_id: ID!
     item_id: ID!
@@ -3512,7 +3512,7 @@ func (ec *executionContext) unmarshalInputListItemInput(ctx context.Context, obj
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("quantity"))
-			it.Quantity, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.Quantity, err = ec.unmarshalOInt2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}

@@ -68,7 +68,7 @@ input ItemInput {
 }
 
 input ListItemInput {
-    quantity: String
+    quantity: Int
     collected: Boolean!
     list_id: ID!
     item_id: ID!

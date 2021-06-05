@@ -94,3 +94,19 @@ func NewRepository(db *sql.DB) Repository {
 func Open(dataSourceName string) (*sql.DB, error) {
 	return sql.Open("postgres", dataSourceName)
 }
+
+// StringPtrToNullString converts *string to sql.NullString.
+func StringPtrToNullString(s *string) sql.NullString {
+	if s != nil {
+		return sql.NullString{String: *s, Valid: true}
+	}
+	return sql.NullString{}
+}
+
+// IntPtrToNullInt64 converts *int to sql.NullInt64.
+func IntPtrToNullInt64(i *int) sql.NullInt64 {
+	if i != nil {
+		return sql.NullInt64{Int64: int64(*i), Valid: true}
+	}
+	return sql.NullInt64{}
+}

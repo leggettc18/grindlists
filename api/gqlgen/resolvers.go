@@ -89,6 +89,7 @@ func (r *mutationResolver) CreateList(ctx context.Context, data ListInput) (*pg.
 	list, err := r.Repository.CreateList(ctx, pg.CreateListParams{
 		Name: data.Name,
 		UserID: data.UserID,
+		CreatedAt: time.Now(),
 	})
 	if err != nil {
 		return nil, err
@@ -104,8 +105,21 @@ func (r *mutationResolver) DeleteList(ctx context.Context, id int64) (*pg.List, 
 	panic("not implemented")
 }
 
-func (r *mutationResolver) CreateListItem(ctx context.Context, itemData ItemInput, listItemdata ListItemInput) (*pg.Item, error) {
-	panic("not implemented")
+func (r *mutationResolver) CreateListItem(ctx context.Context, itemData ItemInput, listItemData ListItemInput) (*pg.Item, error) {
+	item, err := r.Repository.CreateListItem(ctx, pg.CreateItemParams{
+		Name: itemData.Name,
+		Source: itemData.Source,
+	}, pg.SetListItemParams{
+		Quantity: pg.IntPtrToNullInt64(listItemData.Quantity),
+		Collected: listItemData.Collected,
+		ListID: listItemData.ListID,
+		ItemID: listItemData.ItemID,
+		CreatedAt: time.Now(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return item, nil
 }
 
 func (r *mutationResolver) UpdateItem(ctx context.Context, id int64, data ItemInput) (*pg.Item, error) {

@@ -13,10 +13,10 @@ type ListInput struct {
 }
 
 type ListItemInput struct {
-	Quantity  *string `json:"quantity"`
-	Collected bool    `json:"collected"`
-	ListID    int64   `json:"list_id"`
-	ItemID    int64   `json:"item_id"`
+	Quantity  *int  `json:"quantity"`
+	Collected bool  `json:"collected"`
+	ListID    int64 `json:"list_id"`
+	ItemID    int64 `json:"item_id"`
 }
 
 type LoginInput struct {

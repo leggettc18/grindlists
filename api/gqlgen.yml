@@ -18,6 +18,8 @@ autobind:
 models:
   ID:
     model: github.com/99designs/gqlgen/graphql.Int64
+  Int:
+    model: github.com/99designs/gqlgen/graphql.Int
 
 # list return values will be slices not slices of pointers
 # for better compatability with sqlc
