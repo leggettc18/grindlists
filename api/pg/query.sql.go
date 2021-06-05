@@ -229,6 +229,40 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 	return i, err
 }
 
+const getUserLists = `-- name: GetUserLists :many
+SELECT id, name, user_id, created_at, updated_at, deleted_at FROM lists WHERE user_id = $1
+`
+
+func (q *Queries) GetUserLists(ctx context.Context, userID int64) ([]List, error) {
+	rows, err := q.db.QueryContext(ctx, getUserLists, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []List
+	for rows.Next() {
+		var i List
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.UserID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listItems = `-- name: ListItems :many
 SELECT id, name, source, created_at, updated_at, deleted_at FROM items ORDER BY name
 `

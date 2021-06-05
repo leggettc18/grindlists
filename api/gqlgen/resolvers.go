@@ -86,7 +86,14 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, id int64) (*pg.User, 
 }
 
 func (r *mutationResolver) CreateList(ctx context.Context, data ListInput) (*pg.List, error) {
-	panic("not implemented")
+	list, err := r.Repository.CreateList(ctx, pg.CreateListParams{
+		Name: data.Name,
+		UserID: data.UserID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &list, nil
 }
 
 func (r *mutationResolver) UpdateList(ctx context.Context, id int64, data ListInput) (*pg.List, error) {
@@ -145,8 +152,12 @@ func (r *queryResolver) Items(ctx context.Context) ([]pg.Item, error) {
 	panic("not implemented")
 }
 
-func (r *userResolver) Lists(ctx context.Context, obj *pg.User) ([]*pg.List, error) {
-	panic("not implemented")
+func (r *userResolver) Lists(ctx context.Context, obj *pg.User) ([]pg.List, error) {
+	userLists, err := r.Repository.GetUserLists(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+	return userLists, nil
 }
 
 // List returns ListResolver implementation.

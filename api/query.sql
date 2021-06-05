@@ -79,3 +79,6 @@ WHERE id = $1;
 
 -- name: GetUserByEmail :one
 SELECT * FROM users WHERE email = $1;
+
+-- name: GetUserLists :many
+SELECT * FROM lists WHERE user_id = $1;

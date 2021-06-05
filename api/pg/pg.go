@@ -24,6 +24,7 @@ type Repository interface {
 	GetList(ctx context.Context, id int64) (List, error)
 	ListLists(ctx context.Context) ([]List, error)
 	UpdateList(ctx context.Context, arg UpdateListParams) (List, error)
+	GetUserLists(ctx context.Context, user_id int64) ([]List, error)
 
 	// item queries
 	DeleteItem(ctx context.Context, id int64) (Item, error)
