@@ -69,7 +69,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		CreateList     func(childComplexity int, data ListInput) int
-		CreateListItem func(childComplexity int, itemData ItemInput, listItemdata ListItemInput) int
+		CreateListItem func(childComplexity int, listItemData CreateListItemInput) int
 		DeleteItem     func(childComplexity int, id int64) int
 		DeleteList     func(childComplexity int, id int64) int
 		DeleteUser     func(childComplexity int, id int64) int
@@ -118,7 +118,7 @@ type MutationResolver interface {
 	CreateList(ctx context.Context, data ListInput) (*pg.List, error)
 	UpdateList(ctx context.Context, id int64, data ListInput) (*pg.List, error)
 	DeleteList(ctx context.Context, id int64) (*pg.List, error)
-	CreateListItem(ctx context.Context, itemData ItemInput, listItemdata ListItemInput) (*pg.Item, error)
+	CreateListItem(ctx context.Context, listItemData CreateListItemInput) (*pg.Item, error)
 	UpdateItem(ctx context.Context, id int64, data ItemInput) (*pg.Item, error)
 	DeleteItem(ctx context.Context, id int64) (*pg.Item, error)
 	SetListItem(ctx context.Context, data ListItemInput) (*pg.ListItem, error)
@@ -258,7 +258,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateListItem(childComplexity, args["itemData"].(ItemInput), args["listItemdata"].(ListItemInput)), true
+		return e.complexity.Mutation.CreateListItem(childComplexity, args["listItemData"].(CreateListItemInput)), true
 
 	case "Mutation.deleteItem":
 		if e.complexity.Mutation.DeleteItem == nil {
@@ -586,7 +586,7 @@ type Mutation {
     createList(data: ListInput!): List!
     updateList(id: ID!, data: ListInput!): List!
     deleteList(id: ID!): List!
-    createListItem(itemData: ItemInput!, listItemdata: ListItemInput!): Item!
+    createListItem(listItemData: CreateListItemInput!): Item!
     updateItem(id: ID!, data: ItemInput!): Item!
     deleteItem(id: ID!): Item!
     setListItem(data: ListItemInput!): ListItem!
@@ -610,6 +610,14 @@ input ItemInput {
     source: String!
 }
 
+input CreateListItemInput {
+    name: String!
+    source: String!
+    quantity: Int
+    collected: Boolean!
+    list_id: ID!
+}
+
 input ListItemInput {
     quantity: Int
     collected: Boolean!
@@ -631,24 +639,15 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 func (ec *executionContext) field_Mutation_createListItem_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 ItemInput
-	if tmp, ok := rawArgs["itemData"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("itemData"))
-		arg0, err = ec.unmarshalNItemInput2githubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋgqlgenᚐItemInput(ctx, tmp)
+	var arg0 CreateListItemInput
+	if tmp, ok := rawArgs["listItemData"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("listItemData"))
+		arg0, err = ec.unmarshalNCreateListItemInput2githubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋgqlgenᚐCreateListItemInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["itemData"] = arg0
-	var arg1 ListItemInput
-	if tmp, ok := rawArgs["listItemdata"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("listItemdata"))
-		arg1, err = ec.unmarshalNListItemInput2githubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋgqlgenᚐListItemInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["listItemdata"] = arg1
+	args["listItemData"] = arg0
 	return args, nil
 }
 
@@ -1702,7 +1701,7 @@ func (ec *executionContext) _Mutation_createListItem(ctx context.Context, field 
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateListItem(rctx, args["itemData"].(ItemInput), args["listItemdata"].(ListItemInput))
+		return ec.resolvers.Mutation().CreateListItem(rctx, args["listItemData"].(CreateListItemInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3446,6 +3445,58 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputCreateListItemInput(ctx context.Context, obj interface{}) (CreateListItemInput, error) {
+	var it CreateListItemInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "source":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
+			it.Source, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "quantity":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("quantity"))
+			it.Quantity, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "collected":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("collected"))
+			it.Collected, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "list_id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("list_id"))
+			it.ListID, err = ec.unmarshalNID2int64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputItemInput(ctx context.Context, obj interface{}) (ItemInput, error) {
 	var it ItemInput
 	var asMap = obj.(map[string]interface{})
@@ -4288,6 +4339,11 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNCreateListItemInput2githubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋgqlgenᚐCreateListItemInput(ctx context.Context, v interface{}) (CreateListItemInput, error) {
+	res, err := ec.unmarshalInputCreateListItemInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNID2int64(ctx context.Context, v interface{}) (int64, error) {

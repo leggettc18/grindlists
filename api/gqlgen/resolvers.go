@@ -105,15 +105,14 @@ func (r *mutationResolver) DeleteList(ctx context.Context, id int64) (*pg.List, 
 	panic("not implemented")
 }
 
-func (r *mutationResolver) CreateListItem(ctx context.Context, itemData ItemInput, listItemData ListItemInput) (*pg.Item, error) {
+func (r *mutationResolver) CreateListItem(ctx context.Context, listItemData CreateListItemInput) (*pg.Item, error) {
 	item, err := r.Repository.CreateListItem(ctx, pg.CreateItemParams{
-		Name: itemData.Name,
-		Source: itemData.Source,
+		Name: listItemData.Name,
+		Source: listItemData.Source,
 	}, pg.SetListItemParams{
 		Quantity: pg.IntPtrToNullInt64(listItemData.Quantity),
 		Collected: listItemData.Collected,
 		ListID: listItemData.ListID,
-		ItemID: listItemData.ItemID,
 		CreatedAt: time.Now(),
 	})
 	if err != nil {

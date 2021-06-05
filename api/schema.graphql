@@ -43,7 +43,7 @@ type Mutation {
     createList(data: ListInput!): List!
     updateList(id: ID!, data: ListInput!): List!
     deleteList(id: ID!): List!
-    createListItem(itemData: ItemInput!, listItemdata: ListItemInput!): Item!
+    createListItem(listItemData: CreateListItemInput!): Item!
     updateItem(id: ID!, data: ItemInput!): Item!
     deleteItem(id: ID!): Item!
     setListItem(data: ListItemInput!): ListItem!
@@ -65,6 +65,14 @@ input ListInput {
 input ItemInput {
     name: String!
     source: String!
+}
+
+input CreateListItemInput {
+    name: String!
+    source: String!
+    quantity: Int
+    collected: Boolean!
+    list_id: ID!
 }
 
 input ListItemInput {

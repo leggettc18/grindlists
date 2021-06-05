@@ -2,6 +2,14 @@
 
 package gqlgen
 
+type CreateListItemInput struct {
+	Name      string `json:"name"`
+	Source    string `json:"source"`
+	Quantity  *int   `json:"quantity"`
+	Collected bool   `json:"collected"`
+	ListID    int64  `json:"list_id"`
+}
+
 type ItemInput struct {
 	Name   string `json:"name"`
 	Source string `json:"source"`
