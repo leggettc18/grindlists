@@ -19,7 +19,11 @@ type Resolver struct{
 }
 
 func (r *listResolver) User(ctx context.Context, obj *pg.List) (*pg.User, error) {
-	panic("not implemented")
+	user, err := r.Repository.GetUser(ctx, obj.UserID)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 func (r *listResolver) Items(ctx context.Context, obj *pg.List) ([]pg.ListItem, error) {
@@ -40,7 +44,11 @@ func (r *listItemResolver) Quantity(ctx context.Context, obj *pg.ListItem) (*int
 }
 
 func (r *listItemResolver) List(ctx context.Context, obj *pg.ListItem) (*pg.List, error) {
-	panic("not implemented")
+	list, err := r.Repository.GetList(ctx, obj.ListID)
+	if err != nil {
+		return nil, err
+	}
+	return &list, err
 }
 
 func (r *listItemResolver) Item(ctx context.Context, obj *pg.ListItem) (*pg.Item, error) {
