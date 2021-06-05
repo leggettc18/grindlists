@@ -22,12 +22,21 @@ func (r *listResolver) User(ctx context.Context, obj *pg.List) (*pg.User, error)
 	panic("not implemented")
 }
 
-func (r *listResolver) Items(ctx context.Context, obj *pg.List) ([]*pg.ListItem, error) {
-	panic("not implemented")
+func (r *listResolver) Items(ctx context.Context, obj *pg.List) ([]pg.ListItem, error) {
+	listItems, err := r.Repository.GetListListItems(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+	return listItems, nil
 }
 
 func (r *listItemResolver) Quantity(ctx context.Context, obj *pg.ListItem) (*int, error) {
-	panic("not implemented")
+	var quantity int
+	if obj.Quantity.Valid {
+		quantity = int(obj.Quantity.Int64)
+		return &quantity, nil
+	}
+	return nil, nil
 }
 
 func (r *listItemResolver) List(ctx context.Context, obj *pg.ListItem) (*pg.List, error) {
@@ -35,7 +44,11 @@ func (r *listItemResolver) List(ctx context.Context, obj *pg.ListItem) (*pg.List
 }
 
 func (r *listItemResolver) Item(ctx context.Context, obj *pg.ListItem) (*pg.Item, error) {
-	panic("not implemented")
+	item, err := r.Repository.GetItem(ctx, obj.ItemID)
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
 }
 
 func (r *mutationResolver) Login(ctx context.Context, data LoginInput) (*pg.User, error) {

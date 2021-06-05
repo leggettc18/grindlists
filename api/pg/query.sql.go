@@ -191,6 +191,42 @@ func (q *Queries) GetList(ctx context.Context, id int64) (List, error) {
 	return i, err
 }
 
+const getListListItems = `-- name: GetListListItems :many
+SELECT id, quantity, collected, list_id, item_id, created_at, updated_at, deleted_at FROM list_items WHERE list_id = $1
+`
+
+func (q *Queries) GetListListItems(ctx context.Context, listID int64) ([]ListItem, error) {
+	rows, err := q.db.QueryContext(ctx, getListListItems, listID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListItem
+	for rows.Next() {
+		var i ListItem
+		if err := rows.Scan(
+			&i.ID,
+			&i.Quantity,
+			&i.Collected,
+			&i.ListID,
+			&i.ItemID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUser = `-- name: GetUser :one
 SELECT id, name, email, hashed_password, created_at, updated_at, deleted_at FROM users WHERE id = $1
 `

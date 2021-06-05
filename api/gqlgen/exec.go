@@ -102,7 +102,7 @@ type ComplexityRoot struct {
 
 type ListResolver interface {
 	User(ctx context.Context, obj *pg.List) (*pg.User, error)
-	Items(ctx context.Context, obj *pg.List) ([]*pg.ListItem, error)
+	Items(ctx context.Context, obj *pg.List) ([]pg.ListItem, error)
 }
 type ListItemResolver interface {
 	Quantity(ctx context.Context, obj *pg.ListItem) (*int, error)
@@ -552,7 +552,7 @@ type List {
     id: ID!
     name: String!
     user: User!
-    items: [ListItem]!
+    items: [ListItem!]
 }
 
 type Item {
@@ -1200,14 +1200,11 @@ func (ec *executionContext) _List_items(ctx context.Context, field graphql.Colle
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.([]*pg.ListItem)
+	res := resTmp.([]pg.ListItem)
 	fc.Result = res
-	return ec.marshalNListItem2ᚕᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐListItem(ctx, field.Selections, res)
+	return ec.marshalOListItem2ᚕgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐListItemᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ListItem_id(ctx context.Context, field graphql.CollectedField, obj *pg.ListItem) (ret graphql.Marshaler) {
@@ -3750,9 +3747,6 @@ func (ec *executionContext) _List(ctx context.Context, sel ast.SelectionSet, obj
 					}
 				}()
 				res = ec._List_items(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		default:
@@ -4477,43 +4471,6 @@ func (ec *executionContext) marshalNListItem2githubᚗcomᚋleggettc18ᚋgrindli
 	return ec._ListItem(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNListItem2ᚕᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐListItem(ctx context.Context, sel ast.SelectionSet, v []*pg.ListItem) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOListItem2ᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐListItem(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
 func (ec *executionContext) marshalNListItem2ᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐListItem(ctx context.Context, sel ast.SelectionSet, v *pg.ListItem) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -4927,11 +4884,44 @@ func (ec *executionContext) marshalOList2ᚖgithubᚗcomᚋleggettc18ᚋgrindlis
 	return ec._List(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOListItem2ᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐListItem(ctx context.Context, sel ast.SelectionSet, v *pg.ListItem) graphql.Marshaler {
+func (ec *executionContext) marshalOListItem2ᚕgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐListItemᚄ(ctx context.Context, sel ast.SelectionSet, v []pg.ListItem) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._ListItem(ctx, sel, v)
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNListItem2githubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐListItem(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

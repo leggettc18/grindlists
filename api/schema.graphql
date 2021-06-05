@@ -9,7 +9,7 @@ type List {
     id: ID!
     name: String!
     user: User!
-    items: [ListItem]!
+    items: [ListItem!]
 }
 
 type Item {

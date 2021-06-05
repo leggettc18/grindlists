@@ -37,6 +37,7 @@ type Repository interface {
 	SetListItem(ctx context.Context, arg SetListItemParams) (error)
 	UpdateListItem(ctx context.Context, arg UpdateListItemParams) (error)
 	UnsetListItem(ctx context.Context, id int64) (error)
+	GetListListItems(ctx context.Context, list_id int64) ([]ListItem, error)
 }
 
 type repoSvc struct {
@@ -70,6 +71,8 @@ func (r *repoSvc) CreateListItem(ctx context.Context, itemArg CreateItemParams, 
 			return err
 		}
 		if err := q.SetListItem(ctx, SetListItemParams{
+			Quantity: listItemArg.Quantity,
+			Collected: listItemArg.Collected,
 			ListID: listItemArg.ListID,
 			ItemID: res.ID,
 		}); err != nil {
