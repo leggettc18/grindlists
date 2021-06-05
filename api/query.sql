@@ -76,3 +76,6 @@ WHERE id = $1;
 -- name: UnsetListItem :exec
 DELETE FROM list_items
 WHERE id = $1;
+
+-- name: GetUserByEmail :one
+SELECT * FROM users WHERE email = $1;

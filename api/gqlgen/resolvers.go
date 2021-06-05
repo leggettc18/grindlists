@@ -36,7 +36,7 @@ func (r *listItemResolver) Item(ctx context.Context, obj *pg.ListItem) (*pg.Item
 }
 
 func (r *mutationResolver) Login(ctx context.Context, data LoginInput) (*pg.User, error) {
-	user, err := r.Repository.GetUser(ctx, 1)
+	user, err := r.Repository.GetUserByEmail(ctx, data.Email)
 	if err != nil {
 		return nil, err
 	}
