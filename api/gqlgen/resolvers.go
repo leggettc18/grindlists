@@ -129,7 +129,11 @@ func (r *mutationResolver) UnsetListItem(ctx context.Context, id int64) (*pg.Lis
 }
 
 func (r *queryResolver) User(ctx context.Context, id int64) (*pg.User, error) {
-	panic("not implemented")
+	user, err := r.Repository.GetUser(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 func (r *queryResolver) Users(ctx context.Context) ([]pg.User, error) {
@@ -137,19 +141,27 @@ func (r *queryResolver) Users(ctx context.Context) ([]pg.User, error) {
 }
 
 func (r *queryResolver) List(ctx context.Context, id int64) (*pg.List, error) {
-	panic("not implemented")
+	list, err := r.Repository.GetList(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return &list, err
 }
 
 func (r *queryResolver) Lists(ctx context.Context) ([]pg.List, error) {
-	panic("not implemented")
+	return r.Repository.ListLists(ctx)
 }
 
 func (r *queryResolver) Item(ctx context.Context, id int64) (*pg.Item, error) {
-	panic("not implemented")
+	item, err := r.Repository.GetItem(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return &item, nil
 }
 
 func (r *queryResolver) Items(ctx context.Context) ([]pg.Item, error) {
-	panic("not implemented")
+	return r.Repository.ListItems(ctx)
 }
 
 func (r *userResolver) Lists(ctx context.Context, obj *pg.User) ([]pg.List, error) {
