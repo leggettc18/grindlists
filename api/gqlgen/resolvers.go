@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/leggettc18/grindlists/api/app"
 	"github.com/leggettc18/grindlists/api/auth"
 	"github.com/leggettc18/grindlists/api/pg"
 	"github.com/vektah/gqlparser/v2/gqlerror"
@@ -16,6 +17,7 @@ import (
 
 type Resolver struct{
 	Repository pg.Repository
+	App app.App
 }
 
 func (r *listResolver) User(ctx context.Context, obj *pg.List) (*pg.User, error) {
@@ -78,6 +80,12 @@ func (r *mutationResolver) Login(ctx context.Context, data LoginInput) (*pg.User
 		})
 		return nil, nil
 	}
+	token, err := auth.CreateToken(user.ID, r.App.Config.SecretKey)
+	if err != nil {
+		return nil, err
+	}
+	cookieAccess := auth.GetCookieAccess(ctx)
+	cookieAccess.SetToken(token)
 	return &user, nil
 }
 

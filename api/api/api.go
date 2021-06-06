@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gorilla/mux"
 	"github.com/leggettc18/grindlists/api/app"
+	"github.com/leggettc18/grindlists/api/auth"
 	"github.com/leggettc18/grindlists/api/gqlgen"
 	"github.com/leggettc18/grindlists/api/pg"
 )
@@ -26,5 +27,6 @@ func (api *API) Init(r *mux.Router) {
 	}
 	repo := pg.NewRepository(db)
 	r.Handle("/", gqlgen.NewPlaygroundHandler("/graphql"))
-	r.Handle("/graphql", gqlgen.NewHandler(repo))
+	r.Handle("/graphql", gqlgen.NewHandler(repo, *api.App))
+	r.Use(auth.AuthMiddleware)
 }

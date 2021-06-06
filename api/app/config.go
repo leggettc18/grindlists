@@ -5,6 +5,7 @@ import "github.com/spf13/viper"
 type Config struct {
 	// The port for the server to run on.
 	Server *Server
+	SecretKey string `mapstructure:"secret_key"`
 }
 
 type Server struct {
