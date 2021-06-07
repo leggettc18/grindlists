@@ -11,6 +11,17 @@
             "mode": "debug",
             "program": "${workspaceFolder}",
             "args": ["serve"]
+        },
+        {
+            "name": "Launch Remote",
+            "type": "go",
+            "request": "attach",
+            "mode": "remote",
+            "cwd": "${workspaceFolder}",
+            "remotePath": "/api",
+            "port": 2345,
+            "showLog": true,
+            "trace": "verbose"
         }
     ]
 }
