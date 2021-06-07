@@ -21,7 +21,7 @@ func New(a *app.App) (api *API, err error) {
 }
 
 func (api *API) Init(r *mux.Router) {
-	db, err := pg.Open("dbname=grindlists_db user=grindlists password=grindlists host=localhost port=5432")
+	db, err := pg.Open("dbname=grindlists_db user=grindlists password=grindlists host=db port=5432 sslmode=disable")
 	if err != nil {
 		panic(err)
 	}

@@ -1,0 +1,129 @@
+version: "3.7"
+services:
+    traefik:
+        image: traefik:v2.1.2
+        container_name: traefik
+        command:
+            - "--api.insecure=true"
+            - "--api.debug=true"
+            - "--log.level=debug"
+            - "--providers.docker"
+            - "--providers.docker.exposedbydefault=false"
+            - "--providers.docker.network=traefik-public"
+            - "--entrypoints.web.address=:80"
+            - "--entrypoints.websecure.address=:443"
+        ports:
+            - 80:80
+            - 443:443
+            - 8080:8080
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+
+        networks:
+            - traefik-public
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.traefik.tls=true"
+            - "traefik.http.routers.traefik.rule=Host(`traefik.api.local`)"
+            - "traefik.http.routers.traefik.service=api@internal"
+            - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
+            - "traefik.http.routers.http-catchall.entrypoints=web"
+            - "traefik.http.routers.http-catchall.middlewares=redirect-to-https@docker"
+            - "traefik.http.middlewares.redirect-to-https.redirectscheme=https"
+    api:
+        build:
+            context: ./api
+            target: dev
+        container_name: api
+        environment:
+            CGO_ENABLED: 0
+        volumes:
+            - ./api:/api
+        networks:
+            - postgres-net
+            - traefik-public
+            - redis-net
+        depends_on:
+            - db
+            - redis
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.api.tls=true"
+            - "traefik.http.routers.api.rule=Host(`api.local`)"
+            - "traefik.http.routers.api.entrypoints=websecure"
+            - "traefik.http.services.api.loadbalancer.server.port=4000"
+        command: sh -c 'go run main.go migrate up && CompileDaemon --build="go build -o grindlists ./main.go" --command="./grindlists serve"'
+
+    debug-api:
+        build:
+            context: ./api
+            target: dev
+        container_name: debug_api
+        environment:
+            CGO_ENABLED: 0
+        volumes:
+            - ./api:/api
+        ports:
+            - 2345:2345
+        depends_on: 
+            - db
+            - redis
+        networks:
+            - postgres-net
+            - traefik-public
+            - redis-net
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.api.tls=true"
+            - "traefik.http.routers.api.rule=Host(`api.local`)"
+            - "traefik.http.routers.api.entrypoints=websecure"
+            - "traefik.http.services.api.loadbalancer.server.port=4000"
+        security_opt: 
+            - "seccomp:unconfined"
+        tty: true
+        stdin_open: true
+        command: dlv debug --accept-multiclient --continue --headless --listen=:2345 --api-version=2 --log ./main.go -- serve
+    db:
+        image: postgres:11.12
+        container_name: db
+        secrets:
+            - postgres_db
+            - postgres_user
+            - postgres_passwd
+        environment:
+            POSTGRES_DB_FILE: /run/secrets/postgres_db
+            POSTGRES_USER_FILE: /run/secrets/postgres_user
+            POSTGRES_PASSWORD_FILE: /run/secrets/postgres_passwd
+        ports:
+            - 5432:5432
+        volumes: 
+            - postgres-db:/var/lib/postgresql/data
+        networks:
+            - postgres-net
+    redis:
+        image: redis:alpine3.13
+        container_name: redis
+        ports:
+            - 6379:6379
+        networks:
+            - redis-net
+
+volumes:
+    postgres-db:
+        external: true
+
+networks: 
+    postgres-net:
+        external: true
+    traefik-public:
+        external: true
+    redis-net:
+        external: true
+
+secrets:
+    postgres_db:
+        file: ./secrets/postgres_db
+    postgres_passwd:
+        file: ./secrets/postgres_passwd
+    postgres_user:
+        file: ./secrets/postgres_user

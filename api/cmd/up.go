@@ -36,7 +36,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		db, err := pg.Open("host=localhost dbname=grindlists_db user=grindlists password=grindlists sslmode=disable")
+		db, err := pg.Open("host=db dbname=grindlists_db user=grindlists password=grindlists sslmode=disable")
 		if err != nil {
 			return err
 		}
