@@ -49,7 +49,9 @@ to quickly create a Cobra application.`,
 			return err
 		}
 		if err := m.Up(); err != nil {
-			return err
+			if err != migrate.ErrNoChange {
+				return err
+			}
 		}
 		fmt.Println("Successfully applied migrations")
 		return nil
