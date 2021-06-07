@@ -6,6 +6,7 @@ require (
 	github.com/99designs/gqlgen v0.13.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
+	github.com/go-redis/redis/v7 v7.4.0
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
@@ -22,6 +23,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.5.1 // indirect
+	github.com/twinj/uuid v1.0.0
 	github.com/vektah/gqlparser/v2 v2.1.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/sys v0.0.0-20210603125802-9665404d3644 // indirect

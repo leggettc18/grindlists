@@ -84,8 +84,13 @@ func (r *mutationResolver) Login(ctx context.Context, data LoginInput) (*pg.User
 	if err != nil {
 		return nil, err
 	}
+	saveErr := auth.CacheAuth(user.ID, token)
+	if saveErr != nil {
+		return nil, saveErr
+	}
 	cookieAccess := auth.GetCookieAccess(ctx)
-	cookieAccess.SetToken(token)
+	cookieAccess.SetToken("jwtAccess", token.AccessToken, time.Unix(token.AtExpires, 0))
+	cookieAccess.SetToken("jwtRefresh", token.RefreshToken, time.Unix(token.RtExpires, 0))
 	return &user, nil
 }
 
