@@ -72,7 +72,7 @@ debug-db:
 	@# advanced command line interface for postgres
 	@# includes auto-completion and syntax highlighting
 	@# https://www.pgcli.com/
-	@docker run -it --rm --net postgres-net dencold/pgcli postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@db:5432/$(POSGRES_DB)
+	@docker run -it --rm --net postgres-net dencold/pgcli postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@db:5432/$(POSTGRES_DB)
 
 dump:
 	@echo [ dumping postgres backup for $(POSTGRES_DB)... ]
