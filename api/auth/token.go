@@ -28,8 +28,8 @@ type CookieAccess struct {
 // SetToken sets an httponly cookie with a provided token. Intended
 // To be used in a resolver which as the CookieAccess struct passed
 // into it via the context via a Middleware.
-func (this *CookieAccess) SetToken(token string) {
-	http.SetCookie(this.Writer, &http.Cookie{
+func (access *CookieAccess) SetToken(token string) {
+	http.SetCookie(access.Writer, &http.Cookie{
 		Name: "jwtAuth",
 		Value: token,
 		HttpOnly: true,
