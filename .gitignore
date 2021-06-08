@@ -4,3 +4,5 @@ api/__debug_bin
 secrets/postgres_db
 secrets/postgres_passwd
 secrets/postgres_user
+api/dump.rdb
+api/grindlists
