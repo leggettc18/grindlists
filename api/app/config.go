@@ -4,12 +4,13 @@ import "github.com/spf13/viper"
 
 type Config struct {
 	// The port for the server to run on.
-	Server *Server
+	Server    *Server
 	SecretKey string `mapstructure:"secret_key"`
 }
 
 type Server struct {
-	Port int
+	Port   int
+	DbConn string `mapstructure:"db_conn"`
 }
 
 func InitConfig() (*Config, error) {

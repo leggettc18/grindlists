@@ -21,6 +21,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/leggettc18/grindlists/api/app"
 	"github.com/leggettc18/grindlists/api/pg"
 	"github.com/spf13/cobra"
 )
@@ -36,7 +37,11 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		db, err := pg.Open("host=db dbname=grindlists_db user=grindlists password=grindlists sslmode=disable")
+		app, err := app.New()
+		if err != nil {
+			return err
+		}
+		db, err := pg.Open(app.Config.Server.DbConn)
 		if err != nil {
 			return err
 		}
