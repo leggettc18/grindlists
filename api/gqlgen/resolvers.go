@@ -6,6 +6,7 @@ package gqlgen
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -15,9 +16,9 @@ import (
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
-type Resolver struct{
+type Resolver struct {
 	Repository pg.Repository
-	App app.App
+	App        app.App
 }
 
 func (r *listResolver) User(ctx context.Context, obj *pg.List) (*pg.User, error) {
@@ -72,7 +73,7 @@ func (r *mutationResolver) Login(ctx context.Context, data LoginInput) (*pg.User
 	}
 	if !valid {
 		graphql.AddError(ctx, &gqlerror.Error{
-			Path: graphql.GetPath(ctx),
+			Path:    graphql.GetPath(ctx),
 			Message: "Incorrect Password.",
 			Extensions: map[string]interface{}{
 				"field": "password",
@@ -100,10 +101,10 @@ func (r *mutationResolver) Register(ctx context.Context, data UserInput) (*pg.Us
 		return nil, err
 	}
 	user, err := r.Repository.CreateUser(ctx, pg.CreateUserParams{
-		Name: data.Name,
-		Email: data.Email,
+		Name:           data.Name,
+		Email:          data.Email,
 		HashedPassword: hashedPassword,
-		CreatedAt: time.Now(),
+		CreatedAt:      time.Now(),
 	})
 	if err != nil {
 		return nil, err
@@ -120,9 +121,16 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, id int64) (*pg.User, 
 }
 
 func (r *mutationResolver) CreateList(ctx context.Context, data ListInput) (*pg.List, error) {
+	userID, ok := ctx.Value(auth.AccessTokenKey).(int64)
+	if !ok {
+		return nil, errors.New("not authenticated")
+	}
+	if userID != data.UserID {
+		return nil, errors.New("cannot create list for other users")
+	}
 	list, err := r.Repository.CreateList(ctx, pg.CreateListParams{
-		Name: data.Name,
-		UserID: data.UserID,
+		Name:      data.Name,
+		UserID:    data.UserID,
 		CreatedAt: time.Now(),
 	})
 	if err != nil {
@@ -141,12 +149,12 @@ func (r *mutationResolver) DeleteList(ctx context.Context, id int64) (*pg.List, 
 
 func (r *mutationResolver) CreateListItem(ctx context.Context, listItemData CreateListItemInput) (*pg.Item, error) {
 	item, err := r.Repository.CreateListItem(ctx, pg.CreateItemParams{
-		Name: listItemData.Name,
+		Name:   listItemData.Name,
 		Source: listItemData.Source,
 	}, pg.SetListItemParams{
-		Quantity: pg.IntPtrToNullInt64(listItemData.Quantity),
+		Quantity:  pg.IntPtrToNullInt64(listItemData.Quantity),
 		Collected: listItemData.Collected,
-		ListID: listItemData.ListID,
+		ListID:    listItemData.ListID,
 		CreatedAt: time.Now(),
 	})
 	if err != nil {

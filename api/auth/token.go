@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -12,12 +14,12 @@ import (
 )
 
 type TokenDetails struct {
-	AccessToken string
+	AccessToken  string
 	RefreshToken string
-	AccessUuid string
-	RefreshUuid string
-	AtExpires int64
-	RtExpires int64
+	AccessUuid   string
+	RefreshUuid  string
+	AtExpires    int64
+	RtExpires    int64
 }
 
 func CreateToken(userID int64, secret string) (*TokenDetails, error) {
@@ -87,11 +89,11 @@ type CookieAccess struct {
 // into it via the context via a Middleware.
 func (access *CookieAccess) SetToken(name string, token string, expiration time.Time) {
 	http.SetCookie(access.Writer, &http.Cookie{
-		Name: name,
-		Value: token,
+		Name:     name,
+		Value:    token,
 		HttpOnly: true,
-		Path: "/",
-		Expires: expiration,
+		Path:     "/",
+		Expires:  expiration,
 	})
 }
 
@@ -99,27 +101,129 @@ type contextKey struct {
 	key string
 }
 
-var cookieAccessKeyCtx = contextKey(contextKey{ key: "cookie-access" } )
+var cookieAccessKeyCtx = contextKey(contextKey{key: "cookie-access"})
+var AccessTokenKey = contextKey(contextKey{key: "access-token"})
 
-func setValInCtx (ctx *context.Context, val interface{}) {
+func setValInCtx(ctx *context.Context, val interface{}) {
 	*ctx = context.WithValue(*ctx, cookieAccessKeyCtx, val)
 }
 
-func AuthMiddleware(next http.Handler) http.Handler {
+type AuthenticationMiddleware struct {
+	AccessSecret  string
+	RefreshSecret string
+}
+
+func (amw *AuthenticationMiddleware) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authCookie := CookieAccess{
 			Writer: w,
 		}
-		
+
 		ctx := r.Context()
 
-		// &authCookie is a pointer so anyh changes in the future will change 
+		// &authCookie is a pointer so anyh changes in the future will change
 		// authCookie
 		setValInCtx(&ctx, &authCookie)
+
+		tokenAuth, err := ExtractTokenMetadata(r, "jwtAccess", amw.AccessSecret)
+		if err != nil && err != http.ErrNoCookie {
+			// For a no Cookie Error, we want to continue unauthenticated
+			// For everything else, we return a bad request status
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+		if tokenAuth != nil {
+			userID, _ := FetchAuth(ctx, tokenAuth)
+			if userID != 0 {
+				ctx = context.WithValue(ctx, AccessTokenKey, userID)
+			}
+		}
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 func GetCookieAccess(ctx context.Context) *CookieAccess {
 	return ctx.Value(cookieAccessKeyCtx).(*CookieAccess)
+}
+
+func extractToken(r *http.Request, name string) (string, error) {
+	accessTokenCookie, err := r.Cookie(name)
+	if err != nil {
+		return "", err
+	}
+	return accessTokenCookie.Value, nil
+}
+
+func VerifyToken(r *http.Request, name string, secret string) (*jwt.Token, error) {
+	tokenString, err := extractToken(r, name)
+	if err != nil {
+		return nil, err
+	}
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(secret), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return token, nil
+}
+
+func TokenValid(r *http.Request, name string, secret string) error {
+	token, err := VerifyToken(r, name, secret)
+	if err != nil {
+		return err
+	}
+	if _, ok := token.Claims.(jwt.Claims); !ok && !token.Valid {
+		return err
+	}
+	return nil
+}
+
+type AccessDetails struct {
+	AccessUuid string
+	UserId     int64
+}
+
+func ExtractTokenMetadata(r *http.Request, name string, secret string) (*AccessDetails, error) {
+	token, err := VerifyToken(r, name, secret)
+	if err != nil {
+		return nil, err
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if ok && token.Valid {
+		accessUuid, ok := claims["access_uuid"].(string)
+		if !ok {
+			return nil, err
+		}
+		userId, err := strconv.ParseInt(fmt.Sprintf("%.f", claims["user_id"]), 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		return &AccessDetails{
+			AccessUuid: accessUuid,
+			UserId:     userId,
+		}, nil
+	}
+	return nil, err
+}
+
+var ErrExpiredToken = errors.New("token expired")
+
+func FetchAuth(ctx context.Context, authD *AccessDetails) (int64, error) {
+	accessCache, err := cache.NewRedisCacheInstance("access_token", time.Hour)
+	if err != nil {
+		return 0, err
+	}
+	userId, ok := accessCache.Get(ctx, authD.AccessUuid)
+	if !ok {
+		return 0, ErrExpiredToken
+	}
+	userID, err := strconv.ParseInt(userId.(string), 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return userID, nil
 }
