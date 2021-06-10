@@ -62,6 +62,18 @@ func (r *listItemResolver) Item(ctx context.Context, obj *pg.ListItem) (*pg.Item
 	return &item, nil
 }
 
+func (r *queryResolver) Me(ctx context.Context) (*pg.User, error) {
+	userID, ok := ctx.Value(auth.AccessTokenKey).(int64)
+	if !ok {
+		return nil, errors.New("not authenticated")
+	}
+	user, err := r.Repository.GetUser(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 func (r *mutationResolver) Login(ctx context.Context, data LoginInput) (*pg.User, error) {
 	user, err := r.Repository.GetUserByEmail(ctx, data.Email)
 	if err != nil {

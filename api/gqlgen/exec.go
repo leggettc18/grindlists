@@ -93,6 +93,7 @@ type ComplexityRoot struct {
 		Items func(childComplexity int) int
 		List  func(childComplexity int, id int64) int
 		Lists func(childComplexity int) int
+		Me    func(childComplexity int) int
 		User  func(childComplexity int, id int64) int
 		Users func(childComplexity int) int
 	}
@@ -132,6 +133,7 @@ type MutationResolver interface {
 	UnsetListItem(ctx context.Context, id int64) (*pg.ListItem, error)
 }
 type QueryResolver interface {
+	Me(ctx context.Context) (*pg.User, error)
 	User(ctx context.Context, id int64) (*pg.User, error)
 	Users(ctx context.Context) ([]pg.User, error)
 	List(ctx context.Context, id int64) (*pg.List, error)
@@ -450,6 +452,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Lists(childComplexity), true
 
+	case "Query.me":
+		if e.complexity.Query.Me == nil {
+			break
+		}
+
+		return e.complexity.Query.Me(childComplexity), true
+
 	case "Query.user":
 		if e.complexity.Query.User == nil {
 			break
@@ -590,6 +599,7 @@ type ListItem {
 }
 
 type Query {
+    me: User!
     user(id: ID!): User
     users: [User!]!
     list(id: ID!): List
@@ -2017,6 +2027,41 @@ func (ec *executionContext) _Mutation_unsetListItem(ctx context.Context, field g
 	res := resTmp.(*pg.ListItem)
 	fc.Result = res
 	return ec.marshalNListItem2ᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐListItem(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Me(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*pg.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4055,6 +4100,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "me":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_me(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "user":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
