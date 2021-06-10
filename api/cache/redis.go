@@ -32,7 +32,7 @@ func init() {
 // one client in this pacakge.
 type RedisCache struct {
 	keyPrefix string
-	ttl time.Duration
+	ttl       time.Duration
 }
 
 // Add adds a key-value pair to the cache. This is specifically made to
@@ -40,14 +40,14 @@ type RedisCache struct {
 // of RedisCache to gqlgen. If you are wanting to manipulate the redis cache
 // more directly, you may wish to use Set instead.
 func (c *RedisCache) Add(ctx context.Context, key string, value interface{}) {
-	redisClient.Set(c.keyPrefix + key, value, c.ttl)
+	redisClient.Set(c.keyPrefix+key, value, c.ttl)
 }
 
 // Set adds a key-value pair to the cache. Main difference between this and
 // Add is that it returns an error, which makes it more useful than Add outside
 // of using it with gqlgen.
 func (c *RedisCache) Set(key string, value interface{}) error {
-	return redisClient.Set(c.keyPrefix + key, value, c.ttl).Err()
+	return redisClient.Set(c.keyPrefix+key, value, c.ttl).Err()
 }
 
 // Gets a key-value pair from the cache. Part of the implementation of gqlgen's
@@ -59,6 +59,14 @@ func (c *RedisCache) Get(ctx context.Context, key string) (interface{}, bool) {
 		return struct{}{}, false
 	}
 	return s, true
+}
+
+func (c *RedisCache) Del(key string) (int64, error) {
+	s, err := redisClient.Del(c.keyPrefix + key).Result()
+	if err != nil {
+		return 0, err
+	}
+	return s, nil
 }
 
 var ErrRedisCacheNotInstantiated = errors.New("redis client not instantiated, call NewRedisCacheInstance first")

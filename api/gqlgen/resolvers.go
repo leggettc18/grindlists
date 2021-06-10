@@ -95,6 +95,24 @@ func (r *mutationResolver) Login(ctx context.Context, data LoginInput) (*pg.User
 	return &user, nil
 }
 
+func (r *mutationResolver) Logout(ctx context.Context) (*LogoutOutput, error) {
+	_, ok := ctx.Value(auth.AccessTokenKey).(int64)
+	if !ok {
+		return &LogoutOutput{Succeeded: false}, errors.New("not authenticated")
+	}
+	accessUuid, ok := ctx.Value(auth.AccessUuidKey).(string)
+	if !ok {
+		return &LogoutOutput{Succeeded: false}, errors.New("access uuid not present in context")
+	}
+	deleted, err := auth.DeleteAuth("access_token", accessUuid)
+	if err != nil || deleted == 0 {
+		return &LogoutOutput{Succeeded: false}, errors.New("not authenticated")
+	}
+	cookieAccess := auth.GetCookieAccess(ctx)
+	cookieAccess.RemoveToken("jwtAccess")
+	return &LogoutOutput{Succeeded: true}, nil
+}
+
 func (r *mutationResolver) Register(ctx context.Context, data UserInput) (*pg.User, error) {
 	hashedPassword, err := auth.GetPasswordHash(data.Password)
 	if err != nil {
@@ -125,12 +143,9 @@ func (r *mutationResolver) CreateList(ctx context.Context, data ListInput) (*pg.
 	if !ok {
 		return nil, errors.New("not authenticated")
 	}
-	if userID != data.UserID {
-		return nil, errors.New("cannot create list for other users")
-	}
 	list, err := r.Repository.CreateList(ctx, pg.CreateListParams{
 		Name:      data.Name,
-		UserID:    data.UserID,
+		UserID:    userID,
 		CreatedAt: time.Now(),
 	})
 	if err != nil {

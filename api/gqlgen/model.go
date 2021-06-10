@@ -16,8 +16,7 @@ type ItemInput struct {
 }
 
 type ListInput struct {
-	Name   string `json:"name"`
-	UserID int64  `json:"user_id"`
+	Name string `json:"name"`
 }
 
 type ListItemInput struct {
@@ -30,6 +29,10 @@ type ListItemInput struct {
 type LoginInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+type LogoutOutput struct {
+	Succeeded bool `json:"succeeded"`
 }
 
 type UserInput struct {

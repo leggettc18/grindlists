@@ -67,6 +67,10 @@ type ComplexityRoot struct {
 		Quantity  func(childComplexity int) int
 	}
 
+	LogoutOutput struct {
+		Succeeded func(childComplexity int) int
+	}
+
 	Mutation struct {
 		CreateList     func(childComplexity int, data ListInput) int
 		CreateListItem func(childComplexity int, listItemData CreateListItemInput) int
@@ -74,6 +78,7 @@ type ComplexityRoot struct {
 		DeleteList     func(childComplexity int, id int64) int
 		DeleteUser     func(childComplexity int, id int64) int
 		Login          func(childComplexity int, data LoginInput) int
+		Logout         func(childComplexity int) int
 		Register       func(childComplexity int, data UserInput) int
 		SetListItem    func(childComplexity int, data ListItemInput) int
 		UnsetListItem  func(childComplexity int, id int64) int
@@ -113,6 +118,7 @@ type ListItemResolver interface {
 type MutationResolver interface {
 	Login(ctx context.Context, data LoginInput) (*pg.User, error)
 	Register(ctx context.Context, data UserInput) (*pg.User, error)
+	Logout(ctx context.Context) (*LogoutOutput, error)
 	UpdateUser(ctx context.Context, id int64, data UserInput) (*pg.User, error)
 	DeleteUser(ctx context.Context, id int64) (*pg.User, error)
 	CreateList(ctx context.Context, data ListInput) (*pg.List, error)
@@ -236,6 +242,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ListItem.Quantity(childComplexity), true
 
+	case "LogoutOutput.succeeded":
+		if e.complexity.LogoutOutput.Succeeded == nil {
+			break
+		}
+
+		return e.complexity.LogoutOutput.Succeeded(childComplexity), true
+
 	case "Mutation.createList":
 		if e.complexity.Mutation.CreateList == nil {
 			break
@@ -307,6 +320,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.Login(childComplexity, args["data"].(LoginInput)), true
+
+	case "Mutation.logout":
+		if e.complexity.Mutation.Logout == nil {
+			break
+		}
+
+		return e.complexity.Mutation.Logout(childComplexity), true
 
 	case "Mutation.register":
 		if e.complexity.Mutation.Register == nil {
@@ -581,6 +601,7 @@ type Query {
 type Mutation {
     login(data: LoginInput!): User!
     register(data: UserInput!): User!
+    logout: LogoutOutput!
     updateUser(id: ID!, data: UserInput!): User!
     deleteUser(id: ID!): User!
     createList(data: ListInput!): List!
@@ -602,7 +623,6 @@ input UserInput {
 
 input ListInput {
     name: String!
-    user_id: ID!
 }
 
 input ItemInput {
@@ -628,6 +648,10 @@ input ListItemInput {
 input LoginInput {
     email: String!
     password: String!
+}
+
+type LogoutOutput {
+    succeeded: Boolean!
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -1379,6 +1403,41 @@ func (ec *executionContext) _ListItem_item(ctx context.Context, field graphql.Co
 	return ec.marshalNItem2ᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐItem(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _LogoutOutput_succeeded(ctx context.Context, field graphql.CollectedField, obj *LogoutOutput) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "LogoutOutput",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Succeeded, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1461,6 +1520,41 @@ func (ec *executionContext) _Mutation_register(ctx context.Context, field graphq
 	res := resTmp.(*pg.User)
 	fc.Result = res
 	return ec.marshalNUser2ᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_logout(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Logout(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*LogoutOutput)
+	fc.Result = res
+	return ec.marshalNLogoutOutput2ᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋgqlgenᚐLogoutOutput(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_updateUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3536,14 +3630,6 @@ func (ec *executionContext) unmarshalInputListInput(ctx context.Context, obj int
 			if err != nil {
 				return it, err
 			}
-		case "user_id":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user_id"))
-			it.UserID, err = ec.unmarshalNID2int64(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		}
 	}
 
@@ -3831,6 +3917,33 @@ func (ec *executionContext) _ListItem(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
+var logoutOutputImplementors = []string{"LogoutOutput"}
+
+func (ec *executionContext) _LogoutOutput(ctx context.Context, sel ast.SelectionSet, obj *LogoutOutput) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, logoutOutputImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LogoutOutput")
+		case "succeeded":
+			out.Values[i] = ec._LogoutOutput_succeeded(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -3853,6 +3966,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "register":
 			out.Values[i] = ec._Mutation_register(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "logout":
+			out.Values[i] = ec._Mutation_logout(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -4489,6 +4607,20 @@ func (ec *executionContext) unmarshalNListItemInput2githubᚗcomᚋleggettc18ᚋ
 func (ec *executionContext) unmarshalNLoginInput2githubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋgqlgenᚐLoginInput(ctx context.Context, v interface{}) (LoginInput, error) {
 	res, err := ec.unmarshalInputLoginInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNLogoutOutput2githubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋgqlgenᚐLogoutOutput(ctx context.Context, sel ast.SelectionSet, v LogoutOutput) graphql.Marshaler {
+	return ec._LogoutOutput(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLogoutOutput2ᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋgqlgenᚐLogoutOutput(ctx context.Context, sel ast.SelectionSet, v *LogoutOutput) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._LogoutOutput(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {

@@ -93,7 +93,17 @@ func (access *CookieAccess) SetToken(name string, token string, expiration time.
 		Value:    token,
 		HttpOnly: true,
 		Path:     "/",
-		Expires:  expiration,
+		MaxAge:   expiration.Second(),
+	})
+}
+
+func (access *CookieAccess) RemoveToken(name string) {
+	http.SetCookie(access.Writer, &http.Cookie{
+		Name:     name,
+		Value:    "",
+		HttpOnly: true,
+		Path:     "/",
+		MaxAge:   -1,
 	})
 }
 
@@ -103,6 +113,7 @@ type contextKey struct {
 
 var cookieAccessKeyCtx = contextKey(contextKey{key: "cookie-access"})
 var AccessTokenKey = contextKey(contextKey{key: "access-token"})
+var AccessUuidKey = contextKey(contextKey{key: "access-uuid"})
 
 func setValInCtx(ctx *context.Context, val interface{}) {
 	*ctx = context.WithValue(*ctx, cookieAccessKeyCtx, val)
@@ -146,6 +157,7 @@ func (amw *AuthenticationMiddleware) AuthMiddleware(next http.Handler) http.Hand
 				// If there was no error, put the userID in the context.
 			} else if err == nil {
 				ctx = context.WithValue(ctx, AccessTokenKey, userID)
+				ctx = context.WithValue(ctx, AccessUuidKey, tokenAuth.AccessUuid)
 			}
 			// If the error was that the token expired, go on to the
 			// next middleware or resolver with no userID in the context.
@@ -238,4 +250,16 @@ func FetchAuth(ctx context.Context, authD *AccessDetails) (int64, error) {
 		return 0, err
 	}
 	return userID, nil
+}
+
+func DeleteAuth(prefix string, uuid string) (int64, error) {
+	cache, err := cache.NewRedisCacheInstance(prefix, time.Hour)
+	if err != nil {
+		return 0, err
+	}
+	deleted, err := cache.Del(uuid)
+	if err != nil {
+		return 0, err
+	}
+	return deleted, nil
 }
