@@ -132,11 +132,23 @@ func (amw *AuthenticationMiddleware) AuthMiddleware(next http.Handler) http.Hand
 			http.Error(w, "Bad Request", http.StatusBadRequest)
 			return
 		}
+		// If tokenAuth came back nil, then the token was not in anyway and
+		// none of the below code will run. We skip straight to the resolver
+		// or next middleware with no userID in the context.
 		if tokenAuth != nil {
-			userID, _ := FetchAuth(ctx, tokenAuth)
-			if userID != 0 {
+			userID, err := FetchAuth(ctx, tokenAuth)
+			// If any error other than expired token comes up, then there
+			// was an error during processing/connecting to redis. We return an
+			// Internal Server Error
+			if err != nil && err != ErrExpiredToken {
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+				// If there was no error, put the userID in the context.
+			} else if err == nil {
 				ctx = context.WithValue(ctx, AccessTokenKey, userID)
 			}
+			// If the error was that the token expired, go on to the
+			// next middleware or resolver with no userID in the context.
 		}
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
