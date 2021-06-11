@@ -169,10 +169,9 @@ func (amw *AuthenticationMiddleware) AuthMiddleware(next http.Handler) http.Hand
 				return
 			}
 			if rtAuth != nil {
-				if err == ErrExpiredToken {
-					http.Error(w, "Not Authenticated", http.StatusUnauthorized)
-					return
-				} else if err != nil {
+				// We want to let expired tokens through for the resolvers to
+				// handle
+				if err != nil && err != ErrExpiredToken {
 					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 					return
 				}
