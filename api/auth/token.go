@@ -116,6 +116,7 @@ var cookieAccessKeyCtx = contextKey(contextKey{key: "cookie-access"})
 var UserIDKey = contextKey(contextKey{key: "user-id"})
 var AccessUuidKey = contextKey(contextKey{key: "access-uuid"})
 var RefreshUserIDKey = contextKey(contextKey{"refresh-user-id"})
+var RefreshUuidKey = contextKey(contextKey{"refresh-uuid"})
 
 func setValInCtx(ctx *context.Context, val interface{}) {
 	*ctx = context.WithValue(*ctx, cookieAccessKeyCtx, val)
@@ -178,6 +179,7 @@ func (amw *AuthenticationMiddleware) AuthMiddleware(next http.Handler) http.Hand
 				}
 				// Sets separate context key for refresh tokens.
 				ctx = context.WithValue(ctx, RefreshUserIDKey, rtAuth.UserId)
+				ctx = context.WithValue(ctx, RefreshUuidKey, rtAuth.Uuid)
 			}
 		}
 		next.ServeHTTP(w, r.WithContext(ctx))

@@ -162,6 +162,14 @@ func (r *mutationResolver) Refresh(ctx context.Context) (*pg.User, error) {
 	if err != nil {
 		return nil, err
 	}
+	refreshUuid, ok := ctx.Value(auth.RefreshUuidKey).(string)
+	if !ok {
+		return nil, errors.New("refresh token uuid not present in context")
+	}
+	deleted, err := auth.DeleteAuth("refresh-token", refreshUuid)
+	if err != nil || deleted == 0 {
+		return nil, errors.New("not authenticated")
+	}
 	token, err := auth.CreateToken(user.ID, r.App.Config.SecretKey)
 	if err != nil {
 		return nil, err
