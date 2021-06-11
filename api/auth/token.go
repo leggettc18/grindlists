@@ -176,6 +176,7 @@ func (amw *AuthenticationMiddleware) AuthMiddleware(next http.Handler) http.Hand
 					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 					return
 				}
+				// Sets separate context key for refresh tokens.
 				ctx = context.WithValue(ctx, RefreshUserIDKey, rtAuth.UserId)
 			}
 		}
