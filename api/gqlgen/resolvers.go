@@ -139,6 +139,17 @@ func (r *mutationResolver) Register(ctx context.Context, data UserInput) (*pg.Us
 	if err != nil {
 		return nil, err
 	}
+	token, err := auth.CreateToken(user.ID, r.App.Config.SecretKey)
+	if err != nil {
+		return nil, err
+	}
+	saveErr := auth.CacheAuth(user.ID, token)
+	if saveErr != nil {
+		return nil, saveErr
+	}
+	cookieAccess := auth.GetCookieAccess(ctx)
+	cookieAccess.SetToken("jwtAccess", token.AccessToken, time.Unix(token.AtExpires, 0))
+	cookieAccess.SetToken("jwtRefresh", token.RefreshToken, time.Unix(token.RtExpires, 0))
 	return &user, nil
 }
 
