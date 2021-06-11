@@ -115,6 +115,7 @@ type contextKey struct {
 var cookieAccessKeyCtx = contextKey(contextKey{key: "cookie-access"})
 var UserIDKey = contextKey(contextKey{key: "user-id"})
 var AccessUuidKey = contextKey(contextKey{key: "access-uuid"})
+var RefreshUserIDKey = contextKey(contextKey{"refresh-user-id"})
 
 func setValInCtx(ctx *context.Context, val interface{}) {
 	*ctx = context.WithValue(*ctx, cookieAccessKeyCtx, val)
@@ -175,7 +176,7 @@ func (amw *AuthenticationMiddleware) AuthMiddleware(next http.Handler) http.Hand
 					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 					return
 				}
-				ctx = context.WithValue(ctx, UserIDKey, rtAuth.UserId)
+				ctx = context.WithValue(ctx, RefreshUserIDKey, rtAuth.UserId)
 			}
 		}
 		next.ServeHTTP(w, r.WithContext(ctx))

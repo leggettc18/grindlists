@@ -154,7 +154,7 @@ func (r *mutationResolver) Register(ctx context.Context, data UserInput) (*pg.Us
 }
 
 func (r *mutationResolver) Refresh(ctx context.Context) (*pg.User, error) {
-	userID, ok := ctx.Value(auth.UserIDKey).(int64)
+	userID, ok := ctx.Value(auth.RefreshUserIDKey).(int64)
 	if !ok {
 		return nil, errors.New("not authenticated")
 	}
