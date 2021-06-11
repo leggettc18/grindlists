@@ -39,6 +39,7 @@ type Query {
 type Mutation {
     login(data: LoginInput!): User!
     register(data: UserInput!): User!
+    refresh: User!
     logout: LogoutOutput!
     updateUser(id: ID!, data: UserInput!): User!
     deleteUser(id: ID!): User!

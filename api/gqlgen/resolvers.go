@@ -63,7 +63,7 @@ func (r *listItemResolver) Item(ctx context.Context, obj *pg.ListItem) (*pg.Item
 }
 
 func (r *queryResolver) Me(ctx context.Context) (*pg.User, error) {
-	userID, ok := ctx.Value(auth.AccessTokenKey).(int64)
+	userID, ok := ctx.Value(auth.UserIDKey).(int64)
 	if !ok {
 		return nil, errors.New("not authenticated")
 	}
@@ -108,7 +108,7 @@ func (r *mutationResolver) Login(ctx context.Context, data LoginInput) (*pg.User
 }
 
 func (r *mutationResolver) Logout(ctx context.Context) (*LogoutOutput, error) {
-	_, ok := ctx.Value(auth.AccessTokenKey).(int64)
+	_, ok := ctx.Value(auth.UserIDKey).(int64)
 	if !ok {
 		return &LogoutOutput{Succeeded: false}, errors.New("not authenticated")
 	}
@@ -153,6 +153,29 @@ func (r *mutationResolver) Register(ctx context.Context, data UserInput) (*pg.Us
 	return &user, nil
 }
 
+func (r *mutationResolver) Refresh(ctx context.Context) (*pg.User, error) {
+	userID, ok := ctx.Value(auth.UserIDKey).(int64)
+	if !ok {
+		return nil, errors.New("not authenticated")
+	}
+	user, err := r.Repository.GetUser(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	token, err := auth.CreateToken(user.ID, r.App.Config.SecretKey)
+	if err != nil {
+		return nil, err
+	}
+	saveErr := auth.CacheAuth(user.ID, token)
+	if saveErr != nil {
+		return nil, saveErr
+	}
+	cookieAccess := auth.GetCookieAccess(ctx)
+	cookieAccess.SetToken("jwtAccess", token.AccessToken, time.Unix(token.AtExpires, 0))
+	cookieAccess.SetToken("jwtRefresh", token.RefreshToken, time.Unix(token.RtExpires, 0))
+	return &user, nil
+}
+
 func (r *mutationResolver) UpdateUser(ctx context.Context, id int64, data UserInput) (*pg.User, error) {
 	panic("not implemented")
 }
@@ -162,7 +185,7 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, id int64) (*pg.User, 
 }
 
 func (r *mutationResolver) CreateList(ctx context.Context, data ListInput) (*pg.List, error) {
-	userID, ok := ctx.Value(auth.AccessTokenKey).(int64)
+	userID, ok := ctx.Value(auth.UserIDKey).(int64)
 	if !ok {
 		return nil, errors.New("not authenticated")
 	}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -112,7 +113,7 @@ type contextKey struct {
 }
 
 var cookieAccessKeyCtx = contextKey(contextKey{key: "cookie-access"})
-var AccessTokenKey = contextKey(contextKey{key: "access-token"})
+var UserIDKey = contextKey(contextKey{key: "user-id"})
 var AccessUuidKey = contextKey(contextKey{key: "access-uuid"})
 
 func setValInCtx(ctx *context.Context, val interface{}) {
@@ -136,7 +137,7 @@ func (amw *AuthenticationMiddleware) AuthMiddleware(next http.Handler) http.Hand
 		// authCookie
 		setValInCtx(&ctx, &authCookie)
 
-		tokenAuth, err := ExtractTokenMetadata(r, "jwtAccess", amw.AccessSecret)
+		atAuth, err := ExtractTokenMetadata(r, "access", amw.AccessSecret)
 		if err != nil && err != http.ErrNoCookie {
 			// For a no Cookie Error, we want to continue unauthenticated
 			// For everything else, we return a bad request status
@@ -146,8 +147,8 @@ func (amw *AuthenticationMiddleware) AuthMiddleware(next http.Handler) http.Hand
 		// If tokenAuth came back nil, then the token was not in anyway and
 		// none of the below code will run. We skip straight to the resolver
 		// or next middleware with no userID in the context.
-		if tokenAuth != nil {
-			userID, err := FetchAuth(ctx, tokenAuth)
+		if atAuth != nil {
+			userID, err := FetchAuth(ctx, atAuth)
 			// If any error other than expired token comes up, then there
 			// was an error during processing/connecting to redis. We return an
 			// Internal Server Error
@@ -156,11 +157,27 @@ func (amw *AuthenticationMiddleware) AuthMiddleware(next http.Handler) http.Hand
 				return
 				// If there was no error, put the userID in the context.
 			} else if err == nil {
-				ctx = context.WithValue(ctx, AccessTokenKey, userID)
-				ctx = context.WithValue(ctx, AccessUuidKey, tokenAuth.AccessUuid)
+				ctx = context.WithValue(ctx, UserIDKey, userID)
+				ctx = context.WithValue(ctx, AccessUuidKey, atAuth.Uuid)
 			}
 			// If the error was that the token expired, go on to the
 			// next middleware or resolver with no userID in the context.
+		} else {
+			rtAuth, err := ExtractTokenMetadata(r, "refresh", amw.RefreshSecret)
+			if err != nil && err != http.ErrNoCookie {
+				http.Error(w, "Bad Request", http.StatusBadRequest)
+				return
+			}
+			if rtAuth != nil {
+				if err == ErrExpiredToken {
+					http.Error(w, "Not Authenticated", http.StatusUnauthorized)
+					return
+				} else if err != nil {
+					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+					return
+				}
+				ctx = context.WithValue(ctx, UserIDKey, rtAuth.UserId)
+			}
 		}
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -206,19 +223,19 @@ func TokenValid(r *http.Request, name string, secret string) error {
 	return nil
 }
 
-type AccessDetails struct {
-	AccessUuid string
-	UserId     int64
+type TokenMetaDetails struct {
+	Uuid   string
+	UserId int64
 }
 
-func ExtractTokenMetadata(r *http.Request, name string, secret string) (*AccessDetails, error) {
-	token, err := VerifyToken(r, name, secret)
+func ExtractTokenMetadata(r *http.Request, tokenType string, secret string) (*TokenMetaDetails, error) {
+	token, err := VerifyToken(r, "jwt"+strings.Title(strings.ToLower(tokenType)), secret)
 	if err != nil {
 		return nil, err
 	}
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if ok && token.Valid {
-		accessUuid, ok := claims["access_uuid"].(string)
+		accessUuid, ok := claims[strings.ToLower(tokenType)+"_uuid"].(string)
 		if !ok {
 			return nil, err
 		}
@@ -226,9 +243,9 @@ func ExtractTokenMetadata(r *http.Request, name string, secret string) (*AccessD
 		if err != nil {
 			return nil, err
 		}
-		return &AccessDetails{
-			AccessUuid: accessUuid,
-			UserId:     userId,
+		return &TokenMetaDetails{
+			Uuid:   accessUuid,
+			UserId: userId,
 		}, nil
 	}
 	return nil, err
@@ -236,12 +253,12 @@ func ExtractTokenMetadata(r *http.Request, name string, secret string) (*AccessD
 
 var ErrExpiredToken = errors.New("token expired")
 
-func FetchAuth(ctx context.Context, authD *AccessDetails) (int64, error) {
+func FetchAuth(ctx context.Context, authD *TokenMetaDetails) (int64, error) {
 	accessCache, err := cache.NewRedisCacheInstance("access_token", time.Hour)
 	if err != nil {
 		return 0, err
 	}
-	userId, ok := accessCache.Get(ctx, authD.AccessUuid)
+	userId, ok := accessCache.Get(ctx, authD.Uuid)
 	if !ok {
 		return 0, ErrExpiredToken
 	}
