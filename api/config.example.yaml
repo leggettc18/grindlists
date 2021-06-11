@@ -1,0 +1,5 @@
+server:
+  port: 4000
+  db_conn: "host=db dbname=grindlists_db user=grindlists password=grindlists sslmode=disable"
+
+secret_key: 123
