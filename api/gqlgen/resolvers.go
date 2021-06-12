@@ -120,8 +120,19 @@ func (r *mutationResolver) Logout(ctx context.Context) (*LogoutOutput, error) {
 	if err != nil || deleted == 0 {
 		return &LogoutOutput{Succeeded: false}, errors.New("not authenticated")
 	}
+	refreshUuid, ok := ctx.Value(auth.RefreshUuidKey).(string)
+	if !ok {
+		return &LogoutOutput{
+			Succeeded: false,
+		}, errors.New("refresh uuid not present in context")
+	}
+	deleted, err = auth.DeleteAuth("refresh_token", refreshUuid)
+	if err != nil || deleted == 0 {
+		return &LogoutOutput{Succeeded: false}, errors.New("not authenticated")
+	}
 	cookieAccess := auth.GetCookieAccess(ctx)
 	cookieAccess.RemoveToken("jwtAccess")
+	cookieAccess.RemoveToken("jwtRefresh")
 	return &LogoutOutput{Succeeded: true}, nil
 }
 
