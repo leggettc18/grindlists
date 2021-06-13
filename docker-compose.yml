@@ -54,6 +54,25 @@ services:
             - "traefik.http.services.api.loadbalancer.server.port=4000"
         command: sh -c 'go run main.go migrate up && CompileDaemon --build="go build -o grindlists ./main.go" --command="./grindlists serve"'
 
+    client:
+        build:
+            context: ./web
+            target: dev
+        container_name: web
+        ports:
+            - 3000:3000
+        volumes:
+            - ./web:/client/app
+            - /client/app/node_modules
+        networks:
+            - traefik-public
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.client.tls=true"
+            - "traefik.http.routers.client.rule=Host(`client.local`)"
+            - "traefik.http.routers.client.entrypoints=websecure"
+            - "traefik.http.services.client.loadbalancer.server.port=3000"
+
     debug-api:
         build:
             context: ./api

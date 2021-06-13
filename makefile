@@ -12,7 +12,7 @@ service ?= api
 
 all: traefik-network postgres-network redis-network postgres-volume
 	@echo [ starting client '&' api... ]
-	docker-compose up --build traefik api db redis
+	docker-compose up --build traefik api client db redis
 
 traefik-network:
 ifeq (,$(findstring traefik-public,$(NETWORKS)))
@@ -44,7 +44,7 @@ endif
 
 api: traefik-network postgres-network redis-network postgres-volume
 	@echo [ starting api... ]
-	docker-compose up traefik api db redis
+	docker-compose up traefik api client db redis
 
 down:
 	@echo [ teardown all containers... ]
