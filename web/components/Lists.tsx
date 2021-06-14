@@ -4,6 +4,7 @@ import styles from "../styles/Home.module.css";
 const QUERY = gql`
     query Lists {
         lists {
+            id
             name
             user {
                 name
@@ -13,12 +14,13 @@ const QUERY = gql`
 `;
 
 interface List {
-    name: String,
+    id: number,
+    name: string,
     user: User,
 }
 
 interface User {
-    name: String,
+    name: string,
 }
 
 export default function Lists() {
@@ -35,12 +37,14 @@ export default function Lists() {
 
     return (
         <div className={styles.grid}>
-            {data.lists.map((list: List) => (
-                <div className={styles.card}>
-                    <h3>{list.name}</h3>
+            {data.lists.map((list: List, index: number) => {
+                if (index < 4) {
+                return <div className={styles.card} key={list.id}>
+                    <h3 className="text-blue-500">{list.name}</h3>
                     <p>{list.user.name}</p>
                 </div>
-            ))}
+                }
+            })}
         </div>
     );
 }
