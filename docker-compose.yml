@@ -1,7 +1,7 @@
 version: "3.7"
 services:
     traefik:
-        image: traefik:v2.1.2
+        image: traefik:v2.4.8
         container_name: traefik
         command:
             - "--api.insecure=true"
@@ -54,7 +54,7 @@ services:
             - "traefik.http.services.api.loadbalancer.server.port=4000"
         command: sh -c 'go run main.go migrate up && CompileDaemon --build="go build -o grindlists ./main.go" --command="./grindlists serve"'
 
-    client:
+    web:
         build:
             context: ./web
             target: dev
