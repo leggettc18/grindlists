@@ -22,7 +22,7 @@ export default function NavBar() {
                   </Link>
                   <Link href="/lists">
                     <a className="text-steel-200 hover:bg-steel-700 hover:text-steel-300 px-3 py-2 rounded-md text-sm font-medium">
-                      Links
+                      Lists
                     </a>
                   </Link>
                 </div>
