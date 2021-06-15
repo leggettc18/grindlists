@@ -96,7 +96,7 @@ func (access *CookieAccess) SetToken(name string, token string, expiration time.
 		Secure:   true,
 		HttpOnly: true,
 		Path:     "/",
-		MaxAge:   expiration.Second(),
+		MaxAge:   int(expiration.Unix() - time.Now().Unix()),
 	})
 }
 
