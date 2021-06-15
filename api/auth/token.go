@@ -92,6 +92,8 @@ func (access *CookieAccess) SetToken(name string, token string, expiration time.
 	http.SetCookie(access.Writer, &http.Cookie{
 		Name:     name,
 		Value:    token,
+		SameSite: http.SameSiteNoneMode,
+		Secure:   true,
 		HttpOnly: true,
 		Path:     "/",
 		MaxAge:   expiration.Second(),

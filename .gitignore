@@ -6,3 +6,4 @@ secrets/postgres_passwd
 secrets/postgres_user
 api/dump.rdb
 api/grindlists
+traefik/certs/*
