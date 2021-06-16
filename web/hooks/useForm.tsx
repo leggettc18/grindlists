@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 
-export const useForm = (callback: any, initialState = {}) => {
-    const [values, setValues] = useState(initialState);
+export const useForm = <T extends {}>(callback: any, initialState: T) => {
+    const [values, setValues] = useState<T>(initialState);
 
     const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setValues({ ...values, [event.target.name]: event.target.value });

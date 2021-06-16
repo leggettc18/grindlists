@@ -7,16 +7,16 @@ export default function Login() {
     const initialState = {
       email: "",
       password: "",
-    } as LoginInput;
+    };
 
-    const { onChange, onSubmit, values } = useForm(handleLogin, initialState);
+    const { onChange, onSubmit, values } = useForm<LoginInput>(handleLogin, initialState);
 
     const [login, {data, loading, error}] = useLoginMutation();
 
     const router = useRouter();
 
     async function handleLogin() {
-        const response = await login({variables: {data: values as LoginInput}});
+        const response = await login({variables: {data: values}});
         if (response.errors) {
             console.error(error)
         } else {
