@@ -1,21 +1,24 @@
 import React, { useState } from "react";
 import { Transition } from "@headlessui/react";
 import Link from "next/link";
-import { MeQuery, useMeQuery } from "../generated/graphql";
-import { ApolloError } from "@apollo/client";
-import ClientOnly from "./ClientOnly";
+import { useMeQuery } from "../generated/graphql";
 
 export default function NavBar() {
-  const { data, loading, error, refetch } = useMeQuery();
+  const { data, loading, error } = useMeQuery();
   let body = null;
 
   if (!loading && !error) {
     body = (
+      <>
+      <div className="text-gray-100">
+        {data?.me.name}
+      </div>
       <Link href="/logout">
         <a className="hover:bg-sunset-600 text-sunset-100 bg-sunset-500 border border-sunset-600 rounded-lg p-1 shadow-xl">
           Logout
         </a>
       </Link>
+      </>
     );
   } else {
     body = (
@@ -56,8 +59,8 @@ export default function NavBar() {
                 </div>
               </div>
             </div>
-            <div className="flex space-x-2">
-              <ClientOnly>{body}</ClientOnly>
+            <div className="flex space-x-2 items-center">
+              {body}
             </div>
           </div>
         </div>
