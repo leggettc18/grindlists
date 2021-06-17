@@ -74,7 +74,7 @@ func CacheAuth(userID int64, td *TokenDetails) error {
 	if err != nil {
 		return err
 	}
-	errRefresh := refreshCache.Set(td.AccessUuid, strconv.Itoa(int(userID)))
+	errRefresh := refreshCache.Set(td.RefreshUuid, strconv.Itoa(int(userID)))
 	if errRefresh != nil {
 		return errRefresh
 	}

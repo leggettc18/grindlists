@@ -167,7 +167,7 @@ func (r *mutationResolver) Register(ctx context.Context, data UserInput) (*pg.Us
 func (r *mutationResolver) Refresh(ctx context.Context) (*pg.User, error) {
 	userID, ok := ctx.Value(auth.RefreshUserIDKey).(int64)
 	if !ok {
-		return nil, errors.New("not authenticated")
+		return nil, errors.New("not authenticated (no user id in context)")
 	}
 	user, err := r.Repository.GetUser(ctx, userID)
 	if err != nil {
@@ -177,9 +177,9 @@ func (r *mutationResolver) Refresh(ctx context.Context) (*pg.User, error) {
 	if !ok {
 		return nil, errors.New("refresh token uuid not present in context")
 	}
-	deleted, err := auth.DeleteAuth("refresh-token", refreshUuid)
+	deleted, err := auth.DeleteAuth("refresh_token", refreshUuid)
 	if err != nil || deleted == 0 {
-		return nil, errors.New("not authenticated")
+		return nil, errors.New("not authenticated (no refresh token in cache)")
 	}
 	token, err := auth.CreateToken(user.ID, r.App.Config.SecretKey)
 	if err != nil {

@@ -1,26 +1,46 @@
 import React, { useState } from "react";
 import { Transition } from "@headlessui/react";
 import Link from "next/link";
-import { useMeQuery } from "../generated/graphql";
+import {
+  MeDocument,
+  useMeQuery,
+  useRefreshMutation,
+} from "../generated/graphql";
+import ClientOnly from "./ClientOnly";
 
 export default function NavBar() {
   const { data, loading, error } = useMeQuery();
+  const [
+    refresh,
+    { data: refreshData, loading: refreshLoading, error: refreshError },
+  ] = useRefreshMutation({
+    update(cache, { data: refresh }) {
+      cache.writeQuery({
+        query: MeDocument,
+        data: {
+          me: refresh?.refresh,
+        },
+      });
+    },
+  });
   let body = null;
 
   if (!loading && !error) {
     body = (
       <>
-      <div className="text-gray-100">
-        {data?.me.name}
-      </div>
-      <Link href="/logout">
-        <a className="hover:bg-sunset-600 text-sunset-100 bg-sunset-500 border border-sunset-600 rounded-lg p-1 shadow-xl">
-          Logout
-        </a>
-      </Link>
+        <div className="text-gray-100">{data?.me.name}</div>
+        <Link href="/logout">
+          <a className="hover:bg-sunset-600 text-sunset-100 bg-sunset-500 border border-sunset-600 rounded-lg p-1 shadow-xl">
+            Logout
+          </a>
+        </Link>
       </>
     );
   } else {
+    refresh()
+      .then(() => console.log("refresh successful"))
+      .catch((err) => console.log(err));
+
     body = (
       <>
         <Link href="/login">
@@ -59,9 +79,7 @@ export default function NavBar() {
                 </div>
               </div>
             </div>
-            <div className="flex space-x-2 items-center">
-              {body}
-            </div>
+            <div className="flex space-x-2 items-center">{body}</div>
           </div>
         </div>
       </nav>

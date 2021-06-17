@@ -1,0 +1,7 @@
+mutation Refresh {
+    refresh {
+        id
+        name
+        email
+    }
+}
