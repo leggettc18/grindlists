@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { ApolloError, gql } from "@apollo/client";
 import { useRouter } from "next/dist/client/router";
 import Head from "next/head";
 import {
@@ -26,7 +26,7 @@ export default function Login() {
       cache.writeQuery({
         query: MeDocument,
         data: {
-          me: data?.login
+          me: data?.login,
         },
       });
     },
@@ -35,11 +35,15 @@ export default function Login() {
   const router = useRouter();
 
   async function handleLogin() {
-    const response = await login({ variables: { data: values } });
-    if (response.errors) {
-      console.error(error);
-    } else {
-      router.push("/");
+    try {
+      const response = await login({ variables: { data: values } });
+      if (response.errors) {
+        console.error(error);
+      } else {
+        router.push("/");
+      }
+    } catch {
+      console.error(error?.graphQLErrors);
     }
   }
 
