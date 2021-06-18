@@ -56,30 +56,40 @@ export default function Login() {
 
       <h1 className="text-2xl font-sans">Login</h1>
 
-      <form onSubmit={onSubmit}>
-        <div className="flex flex-col">
-          <label htmlFor="email">E-Mail</label>
+      <form onSubmit={onSubmit} className="w-96">
+        <div className="relative mb-5">
           <input
-            className="p-2 rounded-lg border-2 border-gray-500 focus:outline-none focus:border-steel-500"
+            className="peer p-2 border-b border-gray-400 focus:outline-none focus:border-steel-500 w-full p-3 h-16 focus:pt-8"
             type="text"
             name="email"
             id="email"
             onChange={onChange}
           />
+          <label
+            htmlFor="email"
+            className="absolute top-0 left-0 px-3 py-5 transform origin-left transition-all duration-100 ease-in-out text-gray-400 peer-placeholder-shown:top-0 peer-focus:-top-4 peer-focus:text-steel-500 peer-focus:text-sm h-full"
+          >
+            E-Mail
+          </label>
         </div>
-        <div className="flex flex-col">
-          <label htmlFor="password">Password</label>
+        <div className="relative mb-5">
           <input
-            className="p-2 rounded-lg border-2 border-gray-500 focus:outline-none focus:border-steel-500"
+            className="peer p-2 border-b border-gray-400 focus:outline-none focus:border-steel-500 w-full p-3 h-16 focus:pt-8"
             type="password"
             name="password"
             id="password"
             onChange={onChange}
           />
+          <label
+            htmlFor="password"
+            className="absolute top-0 left-0 px-3 py-5 transform origin-left transition-all duration-100 ease-in-out text-gray-400  peer-placeholder-shown:top-0 peer-focus:-top-4 peer-focus:text-steel-500 peer-focus:text-sm h-full"
+          >
+            Password
+          </label>
         </div>
         <button
           type="submit"
-          className="p-2 border border-steel-700 bg-steel-500 text-gray-100"
+          className="p-2 border border-steel-700 bg-steel-500 text-gray-100 w-full rounded-md"
         >
           Login
         </button>
