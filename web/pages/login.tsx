@@ -59,30 +59,32 @@ export default function Login() {
       <form onSubmit={onSubmit} className="w-96">
         <div className="relative mb-5">
           <input
-            className="peer p-2 border-b border-gray-400 focus:outline-none focus:border-steel-500 w-full p-3 h-16 focus:pt-8"
+            className="peer p-2 border-b border-gray-400 focus:outline-none focus:border-steel-500 w-full p-3 h-16 pt-8"
             type="text"
             name="email"
             id="email"
+            placeholder=" "
             onChange={onChange}
           />
           <label
             htmlFor="email"
-            className="absolute top-0 left-0 px-3 py-5 transform origin-left transition-all duration-100 ease-in-out text-gray-400 peer-placeholder-shown:top-0 peer-focus:-top-4 peer-focus:text-steel-500 peer-focus:text-sm h-full"
+            className="absolute -top-4 left-0 px-3 py-5 transform origin-left transition-all duration-100 ease-in-out text-gray-400 peer-placeholder-shown:top-0 peer-focus:-top-4 peer-focus:text-steel-500 text-sm peer-focus:text-sm peer-placeholder-shown:text-lg h-full"
           >
             E-Mail
           </label>
         </div>
         <div className="relative mb-5">
           <input
-            className="peer p-2 border-b border-gray-400 focus:outline-none focus:border-steel-500 w-full p-3 h-16 focus:pt-8"
+            className="peer p-2 border-b border-gray-400 focus:outline-none focus:border-steel-500 w-full p-3 h-16 pt-8"
             type="password"
             name="password"
             id="password"
+            placeholder=" "
             onChange={onChange}
           />
           <label
             htmlFor="password"
-            className="absolute top-0 left-0 px-3 py-5 transform origin-left transition-all duration-100 ease-in-out text-gray-400  peer-placeholder-shown:top-0 peer-focus:-top-4 peer-focus:text-steel-500 peer-focus:text-sm h-full"
+            className="absolute -top-4 left-0 px-3 py-5 transform origin-left transition-all duration-100 ease-in-out text-gray-400 peer-placeholder-shown:top-0 peer-focus:-top-4 peer-focus:text-steel-500 text-sm peer-focus:text-sm peer-placeholder-shown:text-lg h-full"
           >
             Password
           </label>
