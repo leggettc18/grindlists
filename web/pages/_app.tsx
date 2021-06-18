@@ -7,8 +7,10 @@ import NavBar from "../components/NavBar";
 function MyApp({ Component, pageProps }: AppProps) {
   return (
     <ApolloProvider client={client}>
-      <NavBar></NavBar>
-      <Component {...pageProps} />
+      <div className="min-h-screen flex flex-col justify-between">
+        <NavBar></NavBar>
+        <Component {...pageProps} />
+      </div>
     </ApolloProvider>
   );
 }
