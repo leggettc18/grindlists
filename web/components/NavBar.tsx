@@ -1,18 +1,16 @@
-import React, { useState } from "react";
-import { Transition } from "@headlessui/react";
+import React from "react";
 import Link from "next/link";
 import {
   MeDocument,
   useMeQuery,
   useRefreshMutation,
 } from "../generated/graphql";
-import ClientOnly from "./ClientOnly";
 
 export default function NavBar() {
   const { data, loading, error } = useMeQuery();
   const [
     refresh,
-    { data: refreshData, loading: refreshLoading, error: refreshError },
+    { },
   ] = useRefreshMutation({
     update(cache, { data: refresh }) {
       cache.writeQuery({
