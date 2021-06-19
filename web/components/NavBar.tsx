@@ -7,11 +7,10 @@ import {
 } from "../generated/graphql";
 
 export default function NavBar() {
-  const { data, loading, error } = useMeQuery();
-  const [
-    refresh,
-    { },
-  ] = useRefreshMutation({
+  const { data, loading, error } = useMeQuery({
+    pollInterval: 10000
+  });
+  const [refresh, {}] = useRefreshMutation({
     update(cache, { data: refresh }) {
       cache.writeQuery({
         query: MeDocument,
@@ -21,39 +20,41 @@ export default function NavBar() {
       });
     },
   });
-  let body = null;
+  const userOperations = () => {
+    let body = null;
+    if (!loading && !error) {
+      body = (
+        <>
+          <div className="text-gray-100">{data?.me.name}</div>
+          <Link href="/logout">
+            <a className="hover:bg-sunset-600 text-sunset-100 bg-sunset-500 border border-sunset-600 rounded-lg p-1 shadow-xl">
+              Logout
+            </a>
+          </Link>
+        </>
+      );
+    } else {
+      refresh()
+        .then(() => console.log("refresh successful"))
+        .catch((err) => console.log(err));
 
-  if (!loading && !error) {
-    body = (
-      <>
-        <div className="text-gray-100">{data?.me.name}</div>
-        <Link href="/logout">
-          <a className="hover:bg-sunset-600 text-sunset-100 bg-sunset-500 border border-sunset-600 rounded-lg p-1 shadow-xl">
-            Logout
-          </a>
-        </Link>
-      </>
-    );
-  } else {
-    refresh()
-      .then(() => console.log("refresh successful"))
-      .catch((err) => console.log(err));
-
-    body = (
-      <>
-        <Link href="/login">
-          <a className="bg-olive-300 text-olive-700 p-1 shadow-xl border-olive-400 border rounded-lg">
-            Login
-          </a>
-        </Link>
-        <Link href="/register">
-          <a className="bg-seagreen-300 text-seagreen-700 p-1 shadow-xl border-seagreen-400 border rounded-lg">
-            Register
-          </a>
-        </Link>
-      </>
-    );
-  }
+      body = (
+        <>
+          <Link href="/login">
+            <a className="bg-olive-300 text-olive-700 p-1 shadow-xl border-olive-400 border rounded-lg">
+              Login
+            </a>
+          </Link>
+          <Link href="/register">
+            <a className="bg-seagreen-300 text-seagreen-700 p-1 shadow-xl border-seagreen-400 border rounded-lg">
+              Register
+            </a>
+          </Link>
+        </>
+      );
+    }
+    return body
+  };
 
   return (
     <div className="flex-shrink">
@@ -77,7 +78,9 @@ export default function NavBar() {
                 </div>
               </div>
             </div>
-            <div className="flex space-x-2 items-center">{body}</div>
+              <div className="flex space-x-2 items-center">
+                {userOperations()}
+              </div>
           </div>
         </div>
       </nav>
