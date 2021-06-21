@@ -2,12 +2,15 @@ import React from "react";
 import Link from "next/link";
 import {
   MeDocument,
+  useLogoutMutation,
   useMeQuery,
   useRefreshMutation,
 } from "../generated/graphql";
 import { NetworkStatus } from "@apollo/client";
+import { useRouter } from "next/dist/client/router";
 
 export default function NavBar() {
+  const router = useRouter();
   const { data, loading, error, refetch, networkStatus } = useMeQuery({
     pollInterval: 10000,
     notifyOnNetworkStatusChange: true,
@@ -25,15 +28,28 @@ export default function NavBar() {
       },
     });
 
+  const [logout, { data: logoutData }] = useLogoutMutation({
+    update(cache, { data }) {
+      if (data?.logout.succeeded) {
+        cache.evict({id: "User:" + data.logout.user_id});
+      }
+    },
+  });
+
+  const handleLogout = async () => {
+    await logout();
+    if (logoutData?.logout.succeeded) {
+      router.push("/");
+    }
+  };
+
   let body = null;
   const authBody = (
     <>
       <div className="text-gray-100">{data?.me.name}</div>
-      <Link href="/logout">
-        <a className="hover:bg-sunset-600 text-sunset-100 bg-sunset-500 border border-sunset-600 rounded-lg p-1 shadow-xl">
+        <button className="hover:bg-sunset-600 text-sunset-100 bg-sunset-500 border border-sunset-600 rounded-lg p-1 shadow-xl" onClick={handleLogout}>
           Logout
-        </a>
-      </Link>
+        </button>
     </>
   );
   const noAuthBody = (

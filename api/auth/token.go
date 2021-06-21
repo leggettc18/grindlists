@@ -166,23 +166,22 @@ func (amw *AuthenticationMiddleware) AuthMiddleware(next http.Handler) http.Hand
 			}
 			// If the error was that the token expired, go on to the
 			// next middleware or resolver with no userID in the context.
-		} else {
-			rtAuth, err := ExtractTokenMetadata(r, "refresh", amw.RefreshSecret)
-			if err != nil && err != http.ErrNoCookie {
-				http.Error(w, "Bad Request", http.StatusBadRequest)
+		}
+		rtAuth, err := ExtractTokenMetadata(r, "refresh", amw.RefreshSecret)
+		if err != nil && err != http.ErrNoCookie {
+			http.Error(w, "Bad Request", http.StatusBadRequest)
+			return
+		}
+		if rtAuth != nil {
+			// We want to let expired tokens through for the resolvers to
+			// handle
+			if err != nil && err != ErrExpiredToken {
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return
 			}
-			if rtAuth != nil {
-				// We want to let expired tokens through for the resolvers to
-				// handle
-				if err != nil && err != ErrExpiredToken {
-					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-					return
-				}
-				// Sets separate context key for refresh tokens.
-				ctx = context.WithValue(ctx, RefreshUserIDKey, rtAuth.UserId)
-				ctx = context.WithValue(ctx, RefreshUuidKey, rtAuth.Uuid)
-			}
+			// Sets separate context key for refresh tokens.
+			ctx = context.WithValue(ctx, RefreshUserIDKey, rtAuth.UserId)
+			ctx = context.WithValue(ctx, RefreshUuidKey, rtAuth.Uuid)
 		}
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

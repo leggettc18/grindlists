@@ -1,0 +1,6 @@
+mutation Logout {
+    logout {
+        user_id
+        succeeded
+    }
+}

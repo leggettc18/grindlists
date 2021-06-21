@@ -69,6 +69,7 @@ type ComplexityRoot struct {
 
 	LogoutOutput struct {
 		Succeeded func(childComplexity int) int
+		UserID    func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -252,6 +253,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LogoutOutput.Succeeded(childComplexity), true
+
+	case "LogoutOutput.user_id":
+		if e.complexity.LogoutOutput.UserID == nil {
+			break
+		}
+
+		return e.complexity.LogoutOutput.UserID(childComplexity), true
 
 	case "Mutation.createList":
 		if e.complexity.Mutation.CreateList == nil {
@@ -671,6 +679,7 @@ input LoginInput {
 }
 
 type LogoutOutput {
+    user_id: ID!
     succeeded: Boolean!
 }`, BuiltIn: false},
 }
@@ -1421,6 +1430,41 @@ func (ec *executionContext) _ListItem_item(ctx context.Context, field graphql.Co
 	res := resTmp.(*pg.Item)
 	fc.Result = res
 	return ec.marshalNItem2ᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐItem(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _LogoutOutput_user_id(ctx context.Context, field graphql.CollectedField, obj *LogoutOutput) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "LogoutOutput",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNID2int64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LogoutOutput_succeeded(ctx context.Context, field graphql.CollectedField, obj *LogoutOutput) (ret graphql.Marshaler) {
@@ -4018,6 +4062,11 @@ func (ec *executionContext) _LogoutOutput(ctx context.Context, sel ast.Selection
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("LogoutOutput")
+		case "user_id":
+			out.Values[i] = ec._LogoutOutput_user_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "succeeded":
 			out.Values[i] = ec._LogoutOutput_succeeded(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

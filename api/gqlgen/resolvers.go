@@ -108,7 +108,7 @@ func (r *mutationResolver) Login(ctx context.Context, data LoginInput) (*pg.User
 }
 
 func (r *mutationResolver) Logout(ctx context.Context) (*LogoutOutput, error) {
-	_, ok := ctx.Value(auth.UserIDKey).(int64)
+	userID, ok := ctx.Value(auth.UserIDKey).(int64)
 	if !ok {
 		return &LogoutOutput{Succeeded: false}, errors.New("not authenticated")
 	}
@@ -133,7 +133,7 @@ func (r *mutationResolver) Logout(ctx context.Context) (*LogoutOutput, error) {
 	cookieAccess := auth.GetCookieAccess(ctx)
 	cookieAccess.RemoveToken("jwtAccess")
 	cookieAccess.RemoveToken("jwtRefresh")
-	return &LogoutOutput{Succeeded: true}, nil
+	return &LogoutOutput{UserID: userID, Succeeded: true}, nil
 }
 
 func (r *mutationResolver) Register(ctx context.Context, data UserInput) (*pg.User, error) {

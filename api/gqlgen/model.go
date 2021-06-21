@@ -32,7 +32,8 @@ type LoginInput struct {
 }
 
 type LogoutOutput struct {
-	Succeeded bool `json:"succeeded"`
+	UserID    int64 `json:"user_id"`
+	Succeeded bool  `json:"succeeded"`
 }
 
 type UserInput struct {

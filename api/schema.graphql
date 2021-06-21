@@ -90,5 +90,6 @@ input LoginInput {
 }
 
 type LogoutOutput {
+    user_id: ID!
     succeeded: Boolean!
 }
