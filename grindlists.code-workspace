@@ -15,6 +15,10 @@
 	],
 	"settings": {
 		"mitLicenseAdder.owner": "Christopher Leggett",
-		"git.ignoreLimitWarning": true
+		"git.ignoreLimitWarning": true,
+		"files.exclude": {
+			"web": true,
+			"api": true,
+		}
 	}
 }
