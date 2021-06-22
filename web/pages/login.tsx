@@ -56,12 +56,13 @@ export default function Login() {
 
       <form onSubmit={onSubmit} className="w-96">
         <div className="relative mb-5">
-          <Input label="E-Mail" name="email" onChange={onChange}></Input>
+          <Input label="E-Mail" name="email" value={values.email} onChange={onChange}></Input>
         </div>
         <div className="relative mb-5">
           <Input
             label="Password"
             name="password"
+            value={values.password}
             onChange={onChange}
             password
           ></Input>

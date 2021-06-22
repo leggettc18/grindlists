@@ -3,6 +3,7 @@ interface InputProps {
   name: string;
   password?: boolean;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  value?: string;
 }
 
 const Input = (props: InputProps) => {
@@ -14,6 +15,7 @@ const Input = (props: InputProps) => {
         name={props.name}
         id={props.name}
         placeholder=" "
+        value={props.value ? props.value : undefined}
         onChange={props.onChange}
       />
       <label

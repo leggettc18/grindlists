@@ -10,7 +10,7 @@ import Input from "../components/Input";
 
 export default function Register() {
   const initialState = {
-      name: "",
+    name: "",
     email: "",
     password: "",
   };
@@ -57,15 +57,16 @@ export default function Register() {
 
       <form onSubmit={onSubmit} className="w-96">
           <div className="relative mb-5">
-              <Input label="Name" name="name" onChange={onChange}></Input>
+              <Input label="Name" name="name" value={values.name} onChange={onChange}></Input>
           </div>
         <div className="relative mb-5">
-          <Input label="E-Mail" name="email" onChange={onChange}></Input>
+          <Input label="E-Mail" name="email" value={values.email} onChange={onChange}></Input>
         </div>
         <div className="relative mb-5">
           <Input
             label="Password"
             name="password"
+            value={values.password}
             onChange={onChange}
             password
           ></Input>
