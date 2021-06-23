@@ -50,7 +50,7 @@ export default function Lists() {
                 if (index < 4) {
                 return <div className={styles.card} key={list.id}>
                     <h3 className="text-blue-500">{list.name}</h3>
-                    <p>{list.user.name} {list.hearts.count} <HeartIcon className="h-7 w-7 inline text-red-500" /></p>
+                    <p>{list.user.name} {list.hearts.count} <HeartIcon className="h-7 w-7 inline text-blush-500" /></p>
                 </div>
                 }
             })}
