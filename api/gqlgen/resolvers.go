@@ -263,6 +263,26 @@ func (r *mutationResolver) UnsetListItem(ctx context.Context, id int64) (*pg.Lis
 	panic("not implemented")
 }
 
+func (r *mutationResolver) Heart(ctx context.Context, list_id int64) (*pg.List, error) {
+	user_id, ok := ctx.Value(auth.UserIDKey).(int64)
+	if !ok {
+		return nil, errors.New("not authenticated")
+	}
+	err := r.Repository.SetListHeart(ctx, pg.SetListHeartParams{
+		ListID: list_id,
+		UserID: user_id,
+		CreatedAt: time.Now(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	list, err := r.Repository.GetList(ctx, list_id)
+	if err != nil {
+		return nil, err
+	}
+	return &list, nil
+}
+
 func (r *queryResolver) User(ctx context.Context, id int64) (*pg.User, error) {
 	user, err := r.Repository.GetUser(ctx, id)
 	if err != nil {
@@ -307,6 +327,37 @@ func (r *userResolver) Lists(ctx context.Context, obj *pg.User) ([]pg.List, erro
 	return userLists, nil
 }
 
+func (r *listResolver) Hearts(ctx context.Context, obj *pg.List) (*ListHeartAggregate, error) {
+	listHearts, err := r.Repository.GetListHearts(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+	countHearts, err := r.Repository.CountListHearts(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+	heartAggregate := ListHeartAggregate{
+		Count: int(countHearts),
+		Hearts: listHearts,
+	}
+	return &heartAggregate, nil
+}
+
+func (r *listHeartResolver) List(ctx context.Context, obj *pg.ListHeart) (*pg.List, error) {
+	list, err := r.Repository.GetList(ctx, obj.ListID)
+	if err != nil {
+		return nil, err
+	}
+	return &list, err
+}
+func (r *listHeartResolver) User(ctx context.Context, obj *pg.ListHeart) (*pg.User, error) {
+	user, err := r.Repository.GetUser(ctx, obj.UserID)
+	if err != nil {
+		return nil, err
+	}
+	return &user, err
+}
+
 // List returns ListResolver implementation.
 func (r *Resolver) List() ListResolver { return &listResolver{r} }
 
@@ -322,8 +373,11 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 // User returns UserResolver implementation.
 func (r *Resolver) User() UserResolver { return &userResolver{r} }
 
+func (r *Resolver) ListHeart() ListHeartResolver { return &listHeartResolver{r}}
+
 type listResolver struct{ *Resolver }
 type listItemResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
+type listHeartResolver struct { *Resolver }

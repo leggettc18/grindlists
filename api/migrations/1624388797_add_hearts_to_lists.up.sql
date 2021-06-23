@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS list_hearts (
+    id BIGSERIAL PRIMARY KEY,
+    list_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    FOREIGN KEY (list_id) REFERENCES lists(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP NOT NULL,
+    deleted_at TIMESTAMP
+);

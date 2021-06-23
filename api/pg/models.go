@@ -25,6 +25,14 @@ type List struct {
 	DeletedAt sql.NullTime
 }
 
+type ListHeart struct {
+	ID        int64
+	ListID    int64
+	UserID    int64
+	CreatedAt time.Time
+	DeletedAt sql.NullTime
+}
+
 type ListItem struct {
 	ID        int64
 	Quantity  sql.NullInt64

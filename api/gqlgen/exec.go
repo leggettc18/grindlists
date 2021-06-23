@@ -36,6 +36,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	List() ListResolver
+	ListHeart() ListHeartResolver
 	ListItem() ListItemResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
@@ -53,10 +54,22 @@ type ComplexityRoot struct {
 	}
 
 	List struct {
-		ID    func(childComplexity int) int
-		Items func(childComplexity int) int
-		Name  func(childComplexity int) int
-		User  func(childComplexity int) int
+		Hearts func(childComplexity int) int
+		ID     func(childComplexity int) int
+		Items  func(childComplexity int) int
+		Name   func(childComplexity int) int
+		User   func(childComplexity int) int
+	}
+
+	ListHeart struct {
+		ID   func(childComplexity int) int
+		List func(childComplexity int) int
+		User func(childComplexity int) int
+	}
+
+	ListHeartAggregate struct {
+		Count  func(childComplexity int) int
+		Hearts func(childComplexity int) int
 	}
 
 	ListItem struct {
@@ -78,6 +91,7 @@ type ComplexityRoot struct {
 		DeleteItem     func(childComplexity int, id int64) int
 		DeleteList     func(childComplexity int, id int64) int
 		DeleteUser     func(childComplexity int, id int64) int
+		Heart          func(childComplexity int, listID int64) int
 		Login          func(childComplexity int, data LoginInput) int
 		Logout         func(childComplexity int) int
 		Refresh        func(childComplexity int) int
@@ -111,6 +125,11 @@ type ComplexityRoot struct {
 type ListResolver interface {
 	User(ctx context.Context, obj *pg.List) (*pg.User, error)
 	Items(ctx context.Context, obj *pg.List) ([]pg.ListItem, error)
+	Hearts(ctx context.Context, obj *pg.List) (*ListHeartAggregate, error)
+}
+type ListHeartResolver interface {
+	User(ctx context.Context, obj *pg.ListHeart) (*pg.User, error)
+	List(ctx context.Context, obj *pg.ListHeart) (*pg.List, error)
 }
 type ListItemResolver interface {
 	Quantity(ctx context.Context, obj *pg.ListItem) (*int, error)
@@ -134,6 +153,7 @@ type MutationResolver interface {
 	SetListItem(ctx context.Context, data ListItemInput) (*pg.ListItem, error)
 	UpdateListItem(ctx context.Context, id int64, data ListItemInput) (*pg.ListItem, error)
 	UnsetListItem(ctx context.Context, id int64) (*pg.ListItem, error)
+	Heart(ctx context.Context, listID int64) (*pg.List, error)
 }
 type QueryResolver interface {
 	Me(ctx context.Context) (*pg.User, error)
@@ -184,6 +204,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Item.Source(childComplexity), true
 
+	case "List.hearts":
+		if e.complexity.List.Hearts == nil {
+			break
+		}
+
+		return e.complexity.List.Hearts(childComplexity), true
+
 	case "List.id":
 		if e.complexity.List.ID == nil {
 			break
@@ -211,6 +238,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.List.User(childComplexity), true
+
+	case "ListHeart.id":
+		if e.complexity.ListHeart.ID == nil {
+			break
+		}
+
+		return e.complexity.ListHeart.ID(childComplexity), true
+
+	case "ListHeart.list":
+		if e.complexity.ListHeart.List == nil {
+			break
+		}
+
+		return e.complexity.ListHeart.List(childComplexity), true
+
+	case "ListHeart.user":
+		if e.complexity.ListHeart.User == nil {
+			break
+		}
+
+		return e.complexity.ListHeart.User(childComplexity), true
+
+	case "ListHeartAggregate.count":
+		if e.complexity.ListHeartAggregate.Count == nil {
+			break
+		}
+
+		return e.complexity.ListHeartAggregate.Count(childComplexity), true
+
+	case "ListHeartAggregate.hearts":
+		if e.complexity.ListHeartAggregate.Hearts == nil {
+			break
+		}
+
+		return e.complexity.ListHeartAggregate.Hearts(childComplexity), true
 
 	case "ListItem.collected":
 		if e.complexity.ListItem.Collected == nil {
@@ -320,6 +382,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteUser(childComplexity, args["id"].(int64)), true
+
+	case "Mutation.heart":
+		if e.complexity.Mutation.Heart == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_heart_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Heart(childComplexity, args["list_id"].(int64)), true
 
 	case "Mutation.login":
 		if e.complexity.Mutation.Login == nil {
@@ -599,6 +673,7 @@ type List {
     name: String!
     user: User!
     items: [ListItem!]
+    hearts: ListHeartAggregate!
 }
 
 type Item {
@@ -613,6 +688,17 @@ type ListItem {
     collected: Boolean!
     list: List!
     item: Item!
+}
+
+type ListHeart {
+    id: ID!
+    user: User!
+    list: List!
+}
+
+type ListHeartAggregate {
+    count: Int!
+    hearts: [ListHeart!]
 }
 
 type Query {
@@ -641,6 +727,7 @@ type Mutation {
     setListItem(data: ListItemInput!): ListItem!
     updateListItem(id: ID!, data: ListItemInput!): ListItem!
     unsetListItem(id: ID!): ListItem!
+    heart(list_id: ID!): List!
 }
 
 input UserInput {
@@ -761,6 +848,21 @@ func (ec *executionContext) field_Mutation_deleteUser_args(ctx context.Context, 
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_heart_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int64
+	if tmp, ok := rawArgs["list_id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("list_id"))
+		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["list_id"] = arg0
 	return args, nil
 }
 
@@ -1258,6 +1360,213 @@ func (ec *executionContext) _List_items(ctx context.Context, field graphql.Colle
 	res := resTmp.([]pg.ListItem)
 	fc.Result = res
 	return ec.marshalOListItem2ᚕgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐListItemᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _List_hearts(ctx context.Context, field graphql.CollectedField, obj *pg.List) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "List",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.List().Hearts(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ListHeartAggregate)
+	fc.Result = res
+	return ec.marshalNListHeartAggregate2ᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋgqlgenᚐListHeartAggregate(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ListHeart_id(ctx context.Context, field graphql.CollectedField, obj *pg.ListHeart) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ListHeart",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	fc.Result = res
+	return ec.marshalNID2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ListHeart_user(ctx context.Context, field graphql.CollectedField, obj *pg.ListHeart) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ListHeart",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ListHeart().User(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*pg.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ListHeart_list(ctx context.Context, field graphql.CollectedField, obj *pg.ListHeart) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ListHeart",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ListHeart().List(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*pg.List)
+	fc.Result = res
+	return ec.marshalNList2ᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐList(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ListHeartAggregate_count(ctx context.Context, field graphql.CollectedField, obj *ListHeartAggregate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ListHeartAggregate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Count, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ListHeartAggregate_hearts(ctx context.Context, field graphql.CollectedField, obj *ListHeartAggregate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ListHeartAggregate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Hearts, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]pg.ListHeart)
+	fc.Result = res
+	return ec.marshalOListHeart2ᚕgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐListHeartᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ListItem_id(ctx context.Context, field graphql.CollectedField, obj *pg.ListItem) (ret graphql.Marshaler) {
@@ -2116,6 +2425,48 @@ func (ec *executionContext) _Mutation_unsetListItem(ctx context.Context, field g
 	res := resTmp.(*pg.ListItem)
 	fc.Result = res
 	return ec.marshalNListItem2ᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐListItem(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_heart(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_heart_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Heart(rctx, args["list_id"].(int64))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*pg.List)
+	fc.Result = res
+	return ec.marshalNList2ᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐList(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3969,6 +4320,104 @@ func (ec *executionContext) _List(ctx context.Context, sel ast.SelectionSet, obj
 				res = ec._List_items(ctx, field, obj)
 				return res
 			})
+		case "hearts":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._List_hearts(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var listHeartImplementors = []string{"ListHeart"}
+
+func (ec *executionContext) _ListHeart(ctx context.Context, sel ast.SelectionSet, obj *pg.ListHeart) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, listHeartImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ListHeart")
+		case "id":
+			out.Values[i] = ec._ListHeart_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "user":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ListHeart_user(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "list":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ListHeart_list(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var listHeartAggregateImplementors = []string{"ListHeartAggregate"}
+
+func (ec *executionContext) _ListHeartAggregate(ctx context.Context, sel ast.SelectionSet, obj *ListHeartAggregate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, listHeartAggregateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ListHeartAggregate")
+		case "count":
+			out.Values[i] = ec._ListHeartAggregate_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "hearts":
+			out.Values[i] = ec._ListHeartAggregate_hearts(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4170,6 +4619,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "unsetListItem":
 			out.Values[i] = ec._Mutation_unsetListItem(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "heart":
+			out.Values[i] = ec._Mutation_heart(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -4631,6 +5085,21 @@ func (ec *executionContext) marshalNID2int64(ctx context.Context, sel ast.Select
 	return res
 }
 
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) marshalNItem2githubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐItem(ctx context.Context, sel ast.SelectionSet, v pg.Item) graphql.Marshaler {
 	return ec._Item(ctx, sel, &v)
 }
@@ -4736,6 +5205,24 @@ func (ec *executionContext) marshalNList2ᚖgithubᚗcomᚋleggettc18ᚋgrindlis
 		return graphql.Null
 	}
 	return ec._List(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNListHeart2githubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐListHeart(ctx context.Context, sel ast.SelectionSet, v pg.ListHeart) graphql.Marshaler {
+	return ec._ListHeart(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNListHeartAggregate2githubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋgqlgenᚐListHeartAggregate(ctx context.Context, sel ast.SelectionSet, v ListHeartAggregate) graphql.Marshaler {
+	return ec._ListHeartAggregate(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNListHeartAggregate2ᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋgqlgenᚐListHeartAggregate(ctx context.Context, sel ast.SelectionSet, v *ListHeartAggregate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ListHeartAggregate(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNListInput2githubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋgqlgenᚐListInput(ctx context.Context, v interface{}) (ListInput, error) {
@@ -5172,6 +5659,46 @@ func (ec *executionContext) marshalOList2ᚖgithubᚗcomᚋleggettc18ᚋgrindlis
 		return graphql.Null
 	}
 	return ec._List(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOListHeart2ᚕgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐListHeartᚄ(ctx context.Context, sel ast.SelectionSet, v []pg.ListHeart) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNListHeart2githubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐListHeart(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) marshalOListItem2ᚕgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐListItemᚄ(ctx context.Context, sel ast.SelectionSet, v []pg.ListItem) graphql.Marshaler {

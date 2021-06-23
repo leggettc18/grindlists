@@ -2,6 +2,10 @@
 
 package gqlgen
 
+import (
+	"github.com/leggettc18/grindlists/api/pg"
+)
+
 type CreateListItemInput struct {
 	Name      string `json:"name"`
 	Source    string `json:"source"`
@@ -13,6 +17,11 @@ type CreateListItemInput struct {
 type ItemInput struct {
 	Name   string `json:"name"`
 	Source string `json:"source"`
+}
+
+type ListHeartAggregate struct {
+	Count  int            `json:"count"`
+	Hearts []pg.ListHeart `json:"hearts"`
 }
 
 type ListInput struct {

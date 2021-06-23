@@ -38,6 +38,14 @@ type Repository interface {
 	UpdateListItem(ctx context.Context, arg UpdateListItemParams) (error)
 	UnsetListItem(ctx context.Context, id int64) (error)
 	GetListListItems(ctx context.Context, list_id int64) ([]ListItem, error)
+
+	// listHeart queries
+	GetListHearts(ctx context.Context, list_id int64) ([]ListHeart, error)
+	CountListHearts(ctx context.Context, list_id int64) (int64, error)
+	GetListHeartsByUser(ctx context.Context, user_id int64) ([]ListHeart, error)
+	CountListHeartsByUser(ctx context.Context, user_id int64) (int64, error)
+	SetListHeart(ctx context.Context, arg SetListHeartParams) (error)
+	UnsetListHeart(ctx context.Context, id int64) (error)
 }
 
 type repoSvc struct {

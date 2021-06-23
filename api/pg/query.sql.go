@@ -9,6 +9,28 @@ import (
 	"time"
 )
 
+const countListHearts = `-- name: CountListHearts :one
+SELECT count(*) FROM list_hearts WHERE list_id = $1
+`
+
+func (q *Queries) CountListHearts(ctx context.Context, listID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countListHearts, listID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countListHeartsByUser = `-- name: CountListHeartsByUser :one
+SELECT count(*) FROM list_hearts WHERE user_id = $1
+`
+
+func (q *Queries) CountListHeartsByUser(ctx context.Context, userID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countListHeartsByUser, userID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createItem = `-- name: CreateItem :one
 INSERT INTO items (name, source, created_at, updated_at)
 VALUES ($1, $2, $3, $3)
@@ -189,6 +211,72 @@ func (q *Queries) GetList(ctx context.Context, id int64) (List, error) {
 		&i.DeletedAt,
 	)
 	return i, err
+}
+
+const getListHearts = `-- name: GetListHearts :many
+SELECT id, list_id, user_id, created_at, deleted_at FROM list_hearts WHERE list_id = $1
+`
+
+func (q *Queries) GetListHearts(ctx context.Context, listID int64) ([]ListHeart, error) {
+	rows, err := q.db.QueryContext(ctx, getListHearts, listID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListHeart
+	for rows.Next() {
+		var i ListHeart
+		if err := rows.Scan(
+			&i.ID,
+			&i.ListID,
+			&i.UserID,
+			&i.CreatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getListHeartsByUser = `-- name: GetListHeartsByUser :many
+SELECT id, list_id, user_id, created_at, deleted_at FROM list_hearts WHERE user_id = $1
+`
+
+func (q *Queries) GetListHeartsByUser(ctx context.Context, userID int64) ([]ListHeart, error) {
+	rows, err := q.db.QueryContext(ctx, getListHeartsByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListHeart
+	for rows.Next() {
+		var i ListHeart
+		if err := rows.Scan(
+			&i.ID,
+			&i.ListID,
+			&i.UserID,
+			&i.CreatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getListListItems = `-- name: GetListListItems :many
@@ -402,6 +490,22 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
+const setListHeart = `-- name: SetListHeart :exec
+INSERT INTO list_hearts (list_id, user_id, created_at)
+VALUES ($1, $2, $3)
+`
+
+type SetListHeartParams struct {
+	ListID    int64
+	UserID    int64
+	CreatedAt time.Time
+}
+
+func (q *Queries) SetListHeart(ctx context.Context, arg SetListHeartParams) error {
+	_, err := q.db.ExecContext(ctx, setListHeart, arg.ListID, arg.UserID, arg.CreatedAt)
+	return err
+}
+
 const setListItem = `-- name: SetListItem :exec
 INSERT INTO list_items (quantity, collected, list_id, item_id, created_at, updated_at)
 VALUES ($1, $2, $3, $4, $5, $5)
@@ -423,6 +527,16 @@ func (q *Queries) SetListItem(ctx context.Context, arg SetListItemParams) error 
 		arg.ItemID,
 		arg.CreatedAt,
 	)
+	return err
+}
+
+const unsetListHeart = `-- name: UnsetListHeart :exec
+DELETE FROM list_hearts
+WHERE id = $1
+`
+
+func (q *Queries) UnsetListHeart(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, unsetListHeart, id)
 	return err
 }
 

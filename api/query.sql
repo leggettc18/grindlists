@@ -85,3 +85,23 @@ SELECT * FROM lists WHERE user_id = $1;
 
 -- name: GetListListItems :many
 SELECT * FROM list_items WHERE list_id = $1;
+
+-- name: GetListHearts :many
+SELECT * FROM list_hearts WHERE list_id = $1;
+
+-- name: CountListHearts :one
+SELECT count(*) FROM list_hearts WHERE list_id = $1;
+
+-- name: GetListHeartsByUser :many
+SELECT * FROM list_hearts WHERE user_id = $1;
+
+-- name: CountListHeartsByUser :one
+SELECT count(*) FROM list_hearts WHERE user_id = $1;
+
+-- name: SetListHeart :exec
+INSERT INTO list_hearts (list_id, user_id, created_at)
+VALUES ($1, $2, $3);
+
+-- name: UnsetListHeart :exec
+DELETE FROM list_hearts
+WHERE id = $1;

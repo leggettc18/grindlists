@@ -10,6 +10,7 @@ type List {
     name: String!
     user: User!
     items: [ListItem!]
+    hearts: ListHeartAggregate!
 }
 
 type Item {
@@ -24,6 +25,17 @@ type ListItem {
     collected: Boolean!
     list: List!
     item: Item!
+}
+
+type ListHeart {
+    id: ID!
+    user: User!
+    list: List!
+}
+
+type ListHeartAggregate {
+    count: Int!
+    hearts: [ListHeart!]
 }
 
 type Query {
@@ -52,6 +64,7 @@ type Mutation {
     setListItem(data: ListItemInput!): ListItem!
     updateListItem(id: ID!, data: ListItemInput!): ListItem!
     unsetListItem(id: ID!): ListItem!
+    heart(list_id: ID!): List!
 }
 
 input UserInput {
