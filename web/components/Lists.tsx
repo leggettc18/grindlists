@@ -1,11 +1,15 @@
 import { useQuery, gql } from "@apollo/client";
 import styles from "../styles/Home.module.css";
+import {HeartIcon} from '@heroicons/react/solid';
 
 const QUERY = gql`
     query Lists {
         lists {
             id
             name
+            hearts {
+                count
+            }
             user {
                 name
             }
@@ -17,6 +21,11 @@ interface List {
     id: number,
     name: string,
     user: User,
+    hearts: Heart,
+}
+
+interface Heart {
+    count: number
 }
 
 interface User {
@@ -41,7 +50,7 @@ export default function Lists() {
                 if (index < 4) {
                 return <div className={styles.card} key={list.id}>
                     <h3 className="text-blue-500">{list.name}</h3>
-                    <p>{list.user.name}</p>
+                    <p>{list.user.name} {list.hearts.count} <HeartIcon className="h-7 w-7 inline text-red-500" /></p>
                 </div>
                 }
             })}
