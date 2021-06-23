@@ -336,8 +336,19 @@ func (r *listResolver) Hearts(ctx context.Context, obj *pg.List) (*ListHeartAggr
 	if err != nil {
 		return nil, err
 	}
+	heartedByCurrentUser := false
+	user_id, ok := ctx.Value(auth.UserIDKey).(int64)
+	if !ok {
+		heartedByCurrentUser = false
+	}
+	for _, value := range listHearts {
+		if value.UserID == user_id {
+			heartedByCurrentUser = true
+		}
+	}
 	heartAggregate := ListHeartAggregate{
 		Count: int(countHearts),
+		ByCurrentUser: heartedByCurrentUser,
 		Hearts: listHearts,
 	}
 	return &heartAggregate, nil

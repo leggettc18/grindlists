@@ -68,8 +68,9 @@ type ComplexityRoot struct {
 	}
 
 	ListHeartAggregate struct {
-		Count  func(childComplexity int) int
-		Hearts func(childComplexity int) int
+		ByCurrentUser func(childComplexity int) int
+		Count         func(childComplexity int) int
+		Hearts        func(childComplexity int) int
 	}
 
 	ListItem struct {
@@ -259,6 +260,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ListHeart.User(childComplexity), true
+
+	case "ListHeartAggregate.by_current_user":
+		if e.complexity.ListHeartAggregate.ByCurrentUser == nil {
+			break
+		}
+
+		return e.complexity.ListHeartAggregate.ByCurrentUser(childComplexity), true
 
 	case "ListHeartAggregate.count":
 		if e.complexity.ListHeartAggregate.Count == nil {
@@ -698,6 +706,7 @@ type ListHeart {
 
 type ListHeartAggregate {
     count: Int!
+    by_current_user: Boolean!
     hearts: [ListHeart!]
 }
 
@@ -1535,6 +1544,41 @@ func (ec *executionContext) _ListHeartAggregate_count(ctx context.Context, field
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ListHeartAggregate_by_current_user(ctx context.Context, field graphql.CollectedField, obj *ListHeartAggregate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ListHeartAggregate",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ByCurrentUser, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ListHeartAggregate_hearts(ctx context.Context, field graphql.CollectedField, obj *ListHeartAggregate) (ret graphql.Marshaler) {
@@ -4413,6 +4457,11 @@ func (ec *executionContext) _ListHeartAggregate(ctx context.Context, sel ast.Sel
 			out.Values[i] = graphql.MarshalString("ListHeartAggregate")
 		case "count":
 			out.Values[i] = ec._ListHeartAggregate_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "by_current_user":
+			out.Values[i] = ec._ListHeartAggregate_by_current_user(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

@@ -20,8 +20,9 @@ type ItemInput struct {
 }
 
 type ListHeartAggregate struct {
-	Count  int            `json:"count"`
-	Hearts []pg.ListHeart `json:"hearts"`
+	Count         int            `json:"count"`
+	ByCurrentUser bool           `json:"by_current_user"`
+	Hearts        []pg.ListHeart `json:"hearts"`
 }
 
 type ListInput struct {
