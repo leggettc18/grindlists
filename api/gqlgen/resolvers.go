@@ -344,6 +344,7 @@ func (r *listResolver) Hearts(ctx context.Context, obj *pg.List) (*ListHeartAggr
 	for _, value := range listHearts {
 		if value.UserID == user_id {
 			heartedByCurrentUser = true
+			break
 		}
 	}
 	heartAggregate := ListHeartAggregate{
