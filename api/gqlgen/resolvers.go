@@ -269,8 +269,8 @@ func (r *mutationResolver) Heart(ctx context.Context, list_id int64) (*pg.List, 
 		return nil, errors.New("not authenticated")
 	}
 	err := r.Repository.SetListHeart(ctx, pg.SetListHeartParams{
-		ListID: list_id,
-		UserID: user_id,
+		ListID:    list_id,
+		UserID:    user_id,
 		CreatedAt: time.Now(),
 	})
 	if err != nil {
@@ -328,29 +328,39 @@ func (r *userResolver) Lists(ctx context.Context, obj *pg.User) ([]pg.List, erro
 }
 
 func (r *listResolver) Hearts(ctx context.Context, obj *pg.List) (*ListHeartAggregate, error) {
-	listHearts, err := r.Repository.GetListHearts(ctx, obj.ID)
-	if err != nil {
-		return nil, err
+	preloads := getPreloads(ctx)
+	listHearts := []pg.ListHeart{}
+	var err error = nil
+	if contains(preloads, "hearts") {
+		listHearts, err = r.Repository.GetListHearts(ctx, obj.ID)
+		if err != nil {
+			return nil, err
+		}
 	}
-	countHearts, err := r.Repository.CountListHearts(ctx, obj.ID)
-	if err != nil {
-		return nil, err
+	var countHearts int64 = 0
+	if contains(preloads, "count") {
+		countHearts, err = r.Repository.CountListHearts(ctx, obj.ID)
+		if err != nil {
+			return nil, err
+		}
 	}
-	heartedByCurrentUser := false
-	user_id, ok := ctx.Value(auth.UserIDKey).(int64)
-	if !ok {
-		heartedByCurrentUser = false
-	}
-	for _, value := range listHearts {
-		if value.UserID == user_id {
-			heartedByCurrentUser = true
-			break
+	var heartedByCurrentUser = false
+	if contains(preloads, "by_current_user") {
+		user_id, ok := ctx.Value(auth.UserIDKey).(int64)
+		if !ok {
+			heartedByCurrentUser = false
+		}
+		for _, value := range listHearts {
+			if value.UserID == user_id {
+				heartedByCurrentUser = true
+				break
+			}
 		}
 	}
 	heartAggregate := ListHeartAggregate{
-		Count: int(countHearts),
+		Count:         int(countHearts),
 		ByCurrentUser: heartedByCurrentUser,
-		Hearts: listHearts,
+		Hearts:        listHearts,
 	}
 	return &heartAggregate, nil
 }
@@ -385,11 +395,11 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 // User returns UserResolver implementation.
 func (r *Resolver) User() UserResolver { return &userResolver{r} }
 
-func (r *Resolver) ListHeart() ListHeartResolver { return &listHeartResolver{r}}
+func (r *Resolver) ListHeart() ListHeartResolver { return &listHeartResolver{r} }
 
 type listResolver struct{ *Resolver }
 type listItemResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }
-type listHeartResolver struct { *Resolver }
+type listHeartResolver struct{ *Resolver }
