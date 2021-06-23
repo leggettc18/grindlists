@@ -55,7 +55,6 @@ func contains(list []string, item string) (bool){
 	for _, value := range list {
 		if strings.Compare(value, item) == 0 {
 			return true
-			break
 		}
 	}
 	return false
