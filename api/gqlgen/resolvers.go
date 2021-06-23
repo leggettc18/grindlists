@@ -63,8 +63,8 @@ func (r *listItemResolver) Item(ctx context.Context, obj *pg.ListItem) (*pg.Item
 }
 
 func (r *queryResolver) Me(ctx context.Context) (*pg.User, error) {
-	userID, ok := ctx.Value(auth.UserIDKey).(int64)
-	if !ok {
+	userID, err := auth.GetUserID(ctx)
+	if err != nil {
 		return nil, errors.New("not authenticated")
 	}
 	user, err := r.Repository.GetUser(ctx, userID)
@@ -204,8 +204,8 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, id int64) (*pg.User, 
 }
 
 func (r *mutationResolver) CreateList(ctx context.Context, data ListInput) (*pg.List, error) {
-	userID, ok := ctx.Value(auth.UserIDKey).(int64)
-	if !ok {
+	userID, err := auth.GetUserID(ctx)
+	if err != nil {
 		return nil, errors.New("not authenticated")
 	}
 	list, err := r.Repository.CreateList(ctx, pg.CreateListParams{
@@ -264,11 +264,11 @@ func (r *mutationResolver) UnsetListItem(ctx context.Context, id int64) (*pg.Lis
 }
 
 func (r *mutationResolver) Heart(ctx context.Context, list_id int64) (*pg.List, error) {
-	user_id, ok := ctx.Value(auth.UserIDKey).(int64)
-	if !ok {
+	user_id, err := auth.GetUserID(ctx)
+	if err != nil {
 		return nil, errors.New("not authenticated")
 	}
-	err := r.Repository.SetListHeart(ctx, pg.SetListHeartParams{
+	err = r.Repository.SetListHeart(ctx, pg.SetListHeartParams{
 		ListID:    list_id,
 		UserID:    user_id,
 		CreatedAt: time.Now(),
@@ -346,8 +346,8 @@ func (r *listResolver) Hearts(ctx context.Context, obj *pg.List) (*ListHeartAggr
 	}
 	var heartedByCurrentUser = false
 	if contains(preloads, "by_current_user") {
-		user_id, ok := ctx.Value(auth.UserIDKey).(int64)
-		if !ok {
+		user_id, err := auth.GetUserID(ctx)
+		if err != nil {
 			heartedByCurrentUser = false
 		}
 		for _, value := range listHearts {
