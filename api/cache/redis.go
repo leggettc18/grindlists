@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/99designs/gqlgen/handler"
 	"github.com/go-redis/redis/v7"
 )
 
@@ -24,6 +25,12 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+type Cache interface {
+	handler.PersistedQueryCache
+	Set(key string, value interface{}) error
+	Del(key string) (int64, error)
 }
 
 // RedisCache is a struct which holds some defaults for cache

@@ -25,6 +25,7 @@ require (
 	github.com/stretchr/testify v1.5.1 // indirect
 	github.com/twinj/uuid v1.0.0
 	github.com/vektah/gqlparser/v2 v2.1.0
+	github.com/vektra/mockery/v2 v2.9.0 // indirect
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/sys v0.0.0-20210603125802-9665404d3644 // indirect
 	golang.org/x/text v0.3.6 // indirect
