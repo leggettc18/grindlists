@@ -19,6 +19,7 @@ import (
 type Resolver struct {
 	Repository pg.Repository
 	App        app.App
+	Auth       auth.AuthService
 }
 
 func (r *listResolver) User(ctx context.Context, obj *pg.List) (*pg.User, error) {
@@ -63,7 +64,7 @@ func (r *listItemResolver) Item(ctx context.Context, obj *pg.ListItem) (*pg.Item
 }
 
 func (r *queryResolver) Me(ctx context.Context) (*pg.User, error) {
-	userID, err := auth.GetUserID(ctx)
+	userID, err := r.Auth.GetUserID(ctx)
 	if err != nil {
 		return nil, errors.New("not authenticated")
 	}
@@ -204,7 +205,7 @@ func (r *mutationResolver) DeleteUser(ctx context.Context, id int64) (*pg.User, 
 }
 
 func (r *mutationResolver) CreateList(ctx context.Context, data ListInput) (*pg.List, error) {
-	userID, err := auth.GetUserID(ctx)
+	userID, err := r.Auth.GetUserID(ctx)
 	if err != nil {
 		return nil, errors.New("not authenticated")
 	}
@@ -264,7 +265,7 @@ func (r *mutationResolver) UnsetListItem(ctx context.Context, id int64) (*pg.Lis
 }
 
 func (r *mutationResolver) Heart(ctx context.Context, list_id int64) (*pg.List, error) {
-	user_id, err := auth.GetUserID(ctx)
+	user_id, err := r.Auth.GetUserID(ctx)
 	if err != nil {
 		return nil, errors.New("not authenticated")
 	}
@@ -346,7 +347,7 @@ func (r *listResolver) Hearts(ctx context.Context, obj *pg.List) (*ListHeartAggr
 	}
 	var heartedByCurrentUser = false
 	if contains(preloads, "by_current_user") {
-		user_id, err := auth.GetUserID(ctx)
+		user_id, err := r.Auth.GetUserID(ctx)
 		if err != nil {
 			heartedByCurrentUser = false
 		}
