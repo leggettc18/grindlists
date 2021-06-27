@@ -7,3 +7,4 @@ secrets/postgres_user
 api/dump.rdb
 api/grindlists
 traefik/certs/*
+api/coverage.*

@@ -62,7 +62,9 @@ exec:
 
 test-api:
 	@echo [ running api tests... ]
-	docker-compose run api go test -v ./...
+	docker-compose run api go test -coverprofile coverage.out -v ./...
+	@echo [ outputting coverage.html... ]
+	docker-compose run api go tool cover -html=coverage.out -o coverage.html
 
 test-client:
 	@echo [ running web client tests... ]
