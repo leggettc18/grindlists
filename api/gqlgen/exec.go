@@ -77,7 +77,6 @@ type ComplexityRoot struct {
 		Collected func(childComplexity int) int
 		ID        func(childComplexity int) int
 		Item      func(childComplexity int) int
-		List      func(childComplexity int) int
 		Quantity  func(childComplexity int) int
 	}
 
@@ -135,7 +134,6 @@ type ListHeartResolver interface {
 type ListItemResolver interface {
 	Quantity(ctx context.Context, obj *pg.ListItem) (*int, error)
 
-	List(ctx context.Context, obj *pg.ListItem) (*pg.List, error)
 	Item(ctx context.Context, obj *pg.ListItem) (*pg.Item, error)
 }
 type MutationResolver interface {
@@ -302,13 +300,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ListItem.Item(childComplexity), true
-
-	case "ListItem.list":
-		if e.complexity.ListItem.List == nil {
-			break
-		}
-
-		return e.complexity.ListItem.List(childComplexity), true
 
 	case "ListItem.quantity":
 		if e.complexity.ListItem.Quantity == nil {
@@ -694,7 +685,6 @@ type ListItem {
     id: ID!
     quantity: Int
     collected: Boolean!
-    list: List!
     item: Item!
 }
 
@@ -1713,41 +1703,6 @@ func (ec *executionContext) _ListItem_collected(ctx context.Context, field graph
 	res := resTmp.(bool)
 	fc.Result = res
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ListItem_list(ctx context.Context, field graphql.CollectedField, obj *pg.ListItem) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "ListItem",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.ListItem().List(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*pg.List)
-	fc.Result = res
-	return ec.marshalNList2ᚖgithubᚗcomᚋleggettc18ᚋgrindlistsᚋapiᚋpgᚐList(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ListItem_item(ctx context.Context, field graphql.CollectedField, obj *pg.ListItem) (ret graphql.Marshaler) {
@@ -4510,20 +4465,6 @@ func (ec *executionContext) _ListItem(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "list":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._ListItem_list(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
 		case "item":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {

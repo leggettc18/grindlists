@@ -47,14 +47,6 @@ func (r *listItemResolver) Quantity(ctx context.Context, obj *pg.ListItem) (*int
 	return nil, nil
 }
 
-func (r *listItemResolver) List(ctx context.Context, obj *pg.ListItem) (*pg.List, error) {
-	list, err := r.Repository.GetList(ctx, obj.ListID)
-	if err != nil {
-		return nil, err
-	}
-	return &list, err
-}
-
 func (r *listItemResolver) Item(ctx context.Context, obj *pg.ListItem) (*pg.Item, error) {
 	item, err := r.Repository.GetItem(ctx, obj.ItemID)
 	if err != nil {

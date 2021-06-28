@@ -277,7 +277,6 @@ func TestGetList_Success(t *testing.T) {
 				Quantity  *int64
 				Collected bool
 				Item      pg.Item
-				List      pg.List
 			}
 		}
 	}
@@ -300,10 +299,6 @@ func TestGetList_Success(t *testing.T) {
 						name
 						source
 					}
-					list {
-						id
-						name
-					}
 				}
 			}
 		}
@@ -316,7 +311,6 @@ func TestGetList_Success(t *testing.T) {
 	require.Nil(t, listItems[0].Quantity)
 	require.Equal(t, *listItems[1].Quantity, int64(1))
 	require.Equal(t, listItems[0].Item.ID, int64(1))
-	require.Equal(t, listItems[0].List.Name, "Test")
 }
 
 func TestGetListListItems_Error_Database(t *testing.T) {

@@ -23,7 +23,6 @@ type ListItem {
     id: ID!
     quantity: Int
     collected: Boolean!
-    list: List!
     item: Item!
 }
 
