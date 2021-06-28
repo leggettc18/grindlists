@@ -34,7 +34,7 @@ type ListHeart {
 
 type ListHeartAggregate {
     count: Int!
-    by_current_user: Boolean!
+    byCurrentUser: Boolean!
     hearts: [ListHeart!]
 }
 

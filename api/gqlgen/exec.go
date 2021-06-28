@@ -259,7 +259,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ListHeart.User(childComplexity), true
 
-	case "ListHeartAggregate.by_current_user":
+	case "ListHeartAggregate.byCurrentUser":
 		if e.complexity.ListHeartAggregate.ByCurrentUser == nil {
 			break
 		}
@@ -696,7 +696,7 @@ type ListHeart {
 
 type ListHeartAggregate {
     count: Int!
-    by_current_user: Boolean!
+    byCurrentUser: Boolean!
     hearts: [ListHeart!]
 }
 
@@ -1536,7 +1536,7 @@ func (ec *executionContext) _ListHeartAggregate_count(ctx context.Context, field
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ListHeartAggregate_by_current_user(ctx context.Context, field graphql.CollectedField, obj *ListHeartAggregate) (ret graphql.Marshaler) {
+func (ec *executionContext) _ListHeartAggregate_byCurrentUser(ctx context.Context, field graphql.CollectedField, obj *ListHeartAggregate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4415,8 +4415,8 @@ func (ec *executionContext) _ListHeartAggregate(ctx context.Context, sel ast.Sel
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "by_current_user":
-			out.Values[i] = ec._ListHeartAggregate_by_current_user(ctx, field, obj)
+		case "byCurrentUser":
+			out.Values[i] = ec._ListHeartAggregate_byCurrentUser(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

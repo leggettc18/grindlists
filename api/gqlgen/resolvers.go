@@ -338,7 +338,7 @@ func (r *listResolver) Hearts(ctx context.Context, obj *pg.List) (*ListHeartAggr
 		}
 	}
 	var heartedByCurrentUser = false
-	if contains(preloads, "by_current_user") {
+	if contains(preloads, "byCurrentUser") {
 		user_id, err := r.Auth.GetUserID(ctx)
 		if err != nil {
 			heartedByCurrentUser = false

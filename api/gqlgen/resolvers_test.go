@@ -263,10 +263,18 @@ func TestGetList_Success(t *testing.T) {
 		Name:  "Test",
 		Email: "test@example.com",
 	}
+	listHeart := pg.ListHeart{
+		ID: 1,
+		UserID: 1,
+		ListID: 1,
+	}
 	repo.On("GetList", mock.Anything, mock.AnythingOfType("int64")).Return(list, nil)
 	repo.On("GetUser", mock.Anything, mock.AnythingOfType("int64")).Return(user, nil)
 	repo.On("GetListListItems", mock.Anything, mock.AnythingOfType("int64")).Return([]pg.ListItem{listItem1, listItem2}, nil)
 	repo.On("GetItem", mock.Anything, mock.AnythingOfType("int64")).Return(item, nil)
+	repo.On("CountListHearts", mock.Anything, mock.AnythingOfType("int64")).Return(int64(1), nil)
+	repo.On("GetListHearts", mock.Anything, mock.AnythingOfType("int64")).Return([]pg.ListHeart{listHeart}, nil)
+	auth.On("GetUserID", mock.Anything).Return(int64(1), nil)
 	var response struct {
 		List *struct {
 			ID    int64
@@ -277,6 +285,13 @@ func TestGetList_Success(t *testing.T) {
 				Quantity  *int64
 				Collected bool
 				Item      pg.Item
+			}
+			Hearts *struct {
+				Count int64
+				Hearts []*struct {
+					ID int64
+				} 
+				ByCurrentUser bool
 			}
 		}
 	}
@@ -300,6 +315,13 @@ func TestGetList_Success(t *testing.T) {
 						source
 					}
 				}
+				hearts {
+					count
+					hearts {
+						id
+					}
+					byCurrentUser
+				}
 			}
 		}
 	`
@@ -311,6 +333,9 @@ func TestGetList_Success(t *testing.T) {
 	require.Nil(t, listItems[0].Quantity)
 	require.Equal(t, *listItems[1].Quantity, int64(1))
 	require.Equal(t, listItems[0].Item.ID, int64(1))
+	require.Equal(t, response.List.Hearts.Count, int64(1))
+	require.Equal(t, response.List.Hearts.Hearts[0].ID, int64(1))
+	require.Equal(t, response.List.Hearts.ByCurrentUser, true)
 }
 
 func TestGetListListItems_Error_Database(t *testing.T) {
