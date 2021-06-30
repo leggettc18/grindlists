@@ -338,6 +338,116 @@ func TestGetList_Success(t *testing.T) {
 	require.Equal(t, response.List.Hearts.ByCurrentUser, true)
 }
 
+func TestGetList_Success_Hearts_ContainsFalse(t *testing.T) {
+	auth := new(authMocks.AuthService)
+	repo := new(repoMocks.Repository)
+	app, err := app.New()
+	assert.Nil(t, err)
+	c := client.New(NewHandler(repo, *app, auth))
+	list := pg.List{
+		ID:        1,
+		Name:      "Test",
+		UserID:    1,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		DeletedAt: sql.NullTime{Valid: false},
+	}
+	item := pg.Item{
+		ID:     1,
+		Name:   "Test",
+		Source: "Test",
+	}
+	listItem1 := pg.ListItem{
+		ID:        1,
+		Quantity:  sql.NullInt64{Valid: false},
+		Collected: false,
+		ItemID:    item.ID,
+		ListID:    1,
+	}
+	listItem2 := pg.ListItem{
+		ID:        2,
+		Quantity:  sql.NullInt64{Int64: 1, Valid: true},
+		Collected: false,
+		ItemID:    item.ID,
+		ListID:    1,
+	}
+	user := pg.User{
+		ID:    1,
+		Name:  "Test",
+		Email: "test@example.com",
+	}
+	listHeart := pg.ListHeart{
+		ID: 1,
+		UserID: 1,
+		ListID: 1,
+	}
+	repo.On("GetList", mock.Anything, mock.AnythingOfType("int64")).Return(list, nil)
+	repo.On("GetUser", mock.Anything, mock.AnythingOfType("int64")).Return(user, nil)
+	repo.On("GetListListItems", mock.Anything, mock.AnythingOfType("int64")).Return([]pg.ListItem{listItem1, listItem2}, nil)
+	repo.On("GetItem", mock.Anything, mock.AnythingOfType("int64")).Return(item, nil)
+	repo.On("CountListHearts", mock.Anything, mock.AnythingOfType("int64")).Return(int64(1), nil)
+	repo.On("GetListHearts", mock.Anything, mock.AnythingOfType("int64")).Return([]pg.ListHeart{listHeart}, nil)
+	auth.On("GetUserID", mock.Anything).Return(int64(1), nil)
+	var response struct {
+		List *struct {
+			ID    int64
+			Name  string
+			User  pg.User
+			Items []*struct {
+				ID        int64
+				Quantity  *int64
+				Collected bool
+				Item      pg.Item
+			}
+			Hearts *struct {
+				Count int64
+				Hearts []*struct {
+					ID int64
+				} 
+			}
+		}
+	}
+	query := `
+		query List($input: ID!) {
+			list(id: $input) {
+				id
+				name
+				user {
+					id
+					name
+					email
+				}
+				items {
+					id
+					quantity
+					collected
+					item {
+						id
+						name
+						source
+					}
+				}
+				hearts {
+					count
+					hearts {
+						id
+					}
+				}
+			}
+		}
+	`
+	c.MustPost(query, &response, client.Var("input", int64(1)))
+	require.Equal(t, response.List.Name, "Test")
+	require.Equal(t, response.List.User.ID, int64(1))
+	listItems := response.List.Items
+	require.Equal(t, listItems[0].ID, int64(1))
+	require.Nil(t, listItems[0].Quantity)
+	require.Equal(t, *listItems[1].Quantity, int64(1))
+	require.Equal(t, listItems[0].Item.ID, int64(1))
+	require.Equal(t, response.List.Hearts.Count, int64(1))
+	require.Equal(t, response.List.Hearts.Hearts[0].ID, int64(1))
+}
+
 func TestGetListListItems_Error_Database(t *testing.T) {
 	auth := new(authMocks.AuthService)
 	repo := new(repoMocks.Repository)
@@ -488,4 +598,100 @@ func TestGetListItemItem_Error_Database(t *testing.T) {
 	err = c.Post(query, &response, client.Var("input", int64(1)))
 	require.Error(t, err)
 	require.Nil(t, response.List.Items[0])
+}
+
+func TestGetListHearts_DatabaseErrors(t *testing.T) {
+	auth := new(authMocks.AuthService)
+	repo := new(repoMocks.Repository)
+	app, err := app.New()
+	assert.Nil(t, err)
+	c := client.New(NewHandler(repo, *app, auth))
+	list := pg.List{
+		ID:        1,
+		Name:      "Test",
+		UserID:    1,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		DeletedAt: sql.NullTime{Valid: false},
+	}
+	listHeart := pg.ListHeart{
+		ID: 1,
+		UserID: 1,
+		ListID: 1,
+	}
+	repo.On("GetList", mock.Anything, mock.AnythingOfType("int64")).Return(list, nil)
+	repo.On("CountListHearts", mock.Anything, mock.AnythingOfType("int64")).Return(int64(1), errors.New("db_error"))
+	repo.On("GetListHearts", mock.Anything, mock.AnythingOfType("int64")).Return([]pg.ListHeart{listHeart}, errors.New("db_error"))
+	auth.On("GetUserID", mock.Anything).Return(int64(-1), errors.New("userID_error"))
+	var response struct {
+		List *struct {
+			ID    int64
+			Name  string
+			Hearts *struct {
+				Count int64
+			}
+		}
+	}
+	query := `
+		query List($input: ID!) {
+			list(id: $input) {
+				id
+				name
+				hearts {
+					count
+				}
+			}
+		}
+	`
+	err = c.Post(query, &response, client.Var("input", int64(1)))
+	require.Error(t, err)
+	var response2 struct {
+		List *struct {
+			ID    int64
+			Name  string
+			Hearts *struct {
+				Hearts []*struct {
+					ID int64
+				}
+			}
+		}
+	}
+	query = `
+		query List($input: ID!) {
+			list(id: $input) {
+				id
+				name
+				hearts {
+					hearts {
+						id
+					}
+				}
+			}
+		}
+	`
+	err = c.Post(query, &response2, client.Var("input", int64(1)))
+	require.Error(t, err)
+	var response3 struct {
+		List *struct {
+			ID    int64
+			Name  string
+			Hearts *struct {
+				ByCurrentUser bool
+			}
+		}
+	}
+	query = `
+		query List($input: ID!) {
+			list(id: $input) {
+				id
+				name
+				hearts {
+					byCurrentUser
+				}
+			}
+		}
+	`
+	c.MustPost(query, &response3, client.Var("input", int64(1)))
+	require.Equal(t, response3.List.Name, "Test")
+	require.Equal(t, response3.List.Hearts.ByCurrentUser, false)
 }
