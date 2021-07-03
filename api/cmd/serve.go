@@ -30,6 +30,7 @@ import (
 
 	"github.com/leggettc18/grindlists/api/api"
 	"github.com/leggettc18/grindlists/api/app"
+	"github.com/leggettc18/grindlists/api/cache"
 )
 
 // serveCmd represents the serve command
@@ -75,6 +76,7 @@ to quickly create a Cobra application.`,
 func serveAPI(ctx context.Context, api *api.API) {
 	router := mux.NewRouter()
 	api.Init(router)
+	cache.InitRedis()
 
 	var server *http.Server
 	var handler http.Handler

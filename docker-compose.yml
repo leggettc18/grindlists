@@ -48,7 +48,6 @@ services:
             - redis-net
         depends_on:
             - db
-            - redis
         labels:
             - "traefik.enable=true"
             - "traefik.http.routers.api-http.rule=Host(`api.local`)"

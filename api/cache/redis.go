@@ -6,13 +6,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/99designs/gqlgen/handler"
 	"github.com/go-redis/redis/v7"
 )
 
 var redisClient *redis.Client
 
-func init() {
+func InitRedis() {
 	// Initializing Redis
 	dsn := os.Getenv("REDIS_DSN")
 	if len(dsn) == 0 {
@@ -25,12 +24,6 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-}
-
-type Cache interface {
-	handler.PersistedQueryCache
-	Set(key string, value interface{}) error
-	Del(key string) (int64, error)
 }
 
 // RedisCache is a struct which holds some defaults for cache
