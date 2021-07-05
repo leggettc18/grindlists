@@ -26,12 +26,8 @@ func (api *API) Init(r *mux.Router) {
 		panic(err)
 	}
 	repo := pg.NewRepository(db)
-	authSvc := auth.NewAuth()
+	authSvc := auth.NewAuth(api.App.Config.SecretKey, api.App.Config.SecretKey)
 	r.Handle("/", gqlgen.NewPlaygroundHandler("/graphql"))
 	r.Handle("/graphql", gqlgen.NewHandler(repo, *api.App, authSvc))
-	amw := auth.AuthenticationMiddleware{
-		AccessSecret:  api.App.Config.SecretKey,
-		RefreshSecret: api.App.Config.SecretKey,
-	}
-	r.Use(amw.AuthMiddleware)
+	r.Use(authSvc.AuthMiddleware)
 }
