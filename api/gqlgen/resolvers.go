@@ -72,7 +72,7 @@ func (r *mutationResolver) Login(ctx context.Context, data LoginInput) (*pg.User
 	if err != nil {
 		return nil, err
 	}
-	valid, err := auth.VerifyPasswordHash(data.Password, user.HashedPassword)
+	valid, err := r.Auth.VerifyPasswordHash(data.Password, user.HashedPassword)
 	if err != nil {
 		return nil, err
 	}
@@ -86,51 +86,27 @@ func (r *mutationResolver) Login(ctx context.Context, data LoginInput) (*pg.User
 		})
 		return nil, nil
 	}
-	token, err := auth.CreateToken(user.ID, r.App.Config.SecretKey)
+	err = r.Auth.Login(ctx, user.ID, r.App.Config.SecretKey)
 	if err != nil {
 		return nil, err
 	}
-	saveErr := auth.CacheAuth(user.ID, token)
-	if saveErr != nil {
-		return nil, saveErr
-	}
-	cookieAccess := auth.GetCookieAccess(ctx)
-	cookieAccess.SetToken("jwtAccess", token.AccessToken, time.Unix(token.AtExpires, 0))
-	cookieAccess.SetToken("jwtRefresh", token.RefreshToken, time.Unix(token.RtExpires, 0))
 	return &user, nil
 }
 
 func (r *mutationResolver) Logout(ctx context.Context) (*LogoutOutput, error) {
-	userID, ok := ctx.Value(auth.UserIDKey).(int64)
-	if !ok {
+	userID, err := r.Auth.GetUserID(ctx)
+	if err != nil {
 		return &LogoutOutput{Succeeded: false}, errors.New("not authenticated")
 	}
-	accessUuid, ok := ctx.Value(auth.AccessUuidKey).(string)
-	if !ok {
-		return &LogoutOutput{Succeeded: false}, errors.New("access uuid not present in context")
+	err = r.Auth.Logout(ctx)
+	if err != nil {
+		return &LogoutOutput{Succeeded: false}, err
 	}
-	deleted, err := auth.DeleteAuth("access_token", accessUuid)
-	if err != nil || deleted == 0 {
-		return &LogoutOutput{Succeeded: false}, errors.New("not authenticated")
-	}
-	refreshUuid, ok := ctx.Value(auth.RefreshUuidKey).(string)
-	if !ok {
-		return &LogoutOutput{
-			Succeeded: false,
-		}, errors.New("refresh uuid not present in context")
-	}
-	deleted, err = auth.DeleteAuth("refresh_token", refreshUuid)
-	if err != nil || deleted == 0 {
-		return &LogoutOutput{Succeeded: false}, errors.New("not authenticated")
-	}
-	cookieAccess := auth.GetCookieAccess(ctx)
-	cookieAccess.RemoveToken("jwtAccess")
-	cookieAccess.RemoveToken("jwtRefresh")
 	return &LogoutOutput{UserID: userID, Succeeded: true}, nil
 }
 
 func (r *mutationResolver) Register(ctx context.Context, data UserInput) (*pg.User, error) {
-	hashedPassword, err := auth.GetPasswordHash(data.Password)
+	hashedPassword, err := r.Auth.GetPasswordHash(data.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -143,48 +119,19 @@ func (r *mutationResolver) Register(ctx context.Context, data UserInput) (*pg.Us
 	if err != nil {
 		return nil, err
 	}
-	token, err := auth.CreateToken(user.ID, r.App.Config.SecretKey)
+	err = r.Auth.Login(ctx, user.ID, r.App.Config.SecretKey)
 	if err != nil {
 		return nil, err
 	}
-	saveErr := auth.CacheAuth(user.ID, token)
-	if saveErr != nil {
-		return nil, saveErr
-	}
-	cookieAccess := auth.GetCookieAccess(ctx)
-	cookieAccess.SetToken("jwtAccess", token.AccessToken, time.Unix(token.AtExpires, 0))
-	cookieAccess.SetToken("jwtRefresh", token.RefreshToken, time.Unix(token.RtExpires, 0))
 	return &user, nil
 }
 
 func (r *mutationResolver) Refresh(ctx context.Context) (*pg.User, error) {
-	userID, ok := ctx.Value(auth.RefreshUserIDKey).(int64)
-	if !ok {
-		return nil, errors.New("not authenticated (no user id in context)")
-	}
+	userID, err := r.Auth.Refresh(ctx, r.App.Config.SecretKey)
 	user, err := r.Repository.GetUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	refreshUuid, ok := ctx.Value(auth.RefreshUuidKey).(string)
-	if !ok {
-		return nil, errors.New("refresh token uuid not present in context")
-	}
-	deleted, err := auth.DeleteAuth("refresh_token", refreshUuid)
-	if err != nil || deleted == 0 {
-		return nil, errors.New("not authenticated (no refresh token in cache)")
-	}
-	token, err := auth.CreateToken(user.ID, r.App.Config.SecretKey)
-	if err != nil {
-		return nil, err
-	}
-	saveErr := auth.CacheAuth(user.ID, token)
-	if saveErr != nil {
-		return nil, saveErr
-	}
-	cookieAccess := auth.GetCookieAccess(ctx)
-	cookieAccess.SetToken("jwtAccess", token.AccessToken, time.Unix(token.AtExpires, 0))
-	cookieAccess.SetToken("jwtRefresh", token.RefreshToken, time.Unix(token.RtExpires, 0))
 	return &user, nil
 }
 

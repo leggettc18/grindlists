@@ -4,11 +4,17 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"time"
 )
 
 type AuthService interface {
 	GetUserID(context.Context) (int64, error)
 	AuthMiddleware(http.Handler) (http.Handler)
+	GetPasswordHash(string) ([]byte, error)
+	VerifyPasswordHash(string, []byte) (bool, error)
+	Login(context.Context, int64, string) (error)
+	Logout(context.Context) error
+	Refresh(context.Context, string) (int64, error)
 }
 
 type authSvc struct {
@@ -23,9 +29,78 @@ func NewAuth(aSecret string, rSecret string) AuthService {
 	}
 }
 
+// Login creates a new token, caches it, and sets Cookies on the HTTP response.
+func (a *authSvc) Login(ctx context.Context, userID int64, secretKey string) error {
+	token, err := createToken(userID, secretKey)
+	if err != nil {
+		return err
+	}
+	saveErr := cacheAuth(userID, token)
+	if saveErr != nil {
+		return saveErr
+	}
+	cookieAccess := getCookieAccess(ctx)
+	cookieAccess.SetToken("jwtAccess", token.AccessToken, time.Unix(token.AtExpires, 0))
+	cookieAccess.SetToken("jwtRefresh", token.RefreshToken, time.Unix(token.RtExpires, 0))
+	return nil
+}
+
+// Logout logs out the user currently in the context.
+func (a *authSvc) Logout(ctx context.Context) error {
+	accessUuid, ok := ctx.Value(AccessUuidKey).(string)
+	if !ok {
+		return errors.New("access uuid not present in context")
+	}
+	deleted, err := deleteAuth("access_token", accessUuid)
+	if err != nil || deleted == 0 {
+		return errors.New("not authenticated")
+	}
+	refreshUuid, ok := ctx.Value(RefreshUuidKey).(string)
+	if !ok {
+		return errors.New("refresh uuid not present in context")
+	}
+	deleted, err = deleteAuth("refresh_token", refreshUuid)
+	if err != nil || deleted == 0 {
+		return errors.New("not authenticated")
+	}
+	cookieAccess := getCookieAccess(ctx)
+	cookieAccess.RemoveToken("jwtAccess")
+	cookieAccess.RemoveToken("jwtRefresh")
+	return nil
+}
+
+// Refresh refreshes the currently stored JWT if the refresh token has not
+// expired.
+func (a *authSvc) Refresh(ctx context.Context, secretKey string) (int64, error) {
+	userID, ok := ctx.Value(RefreshUserIDKey).(int64)
+	if !ok {
+		return -1, errors.New("not authenticated (no user id in context)")
+	}
+	refreshUuid, ok := ctx.Value(RefreshUuidKey).(string)
+	if !ok {
+		return -1, errors.New("refresh token uuid not present in context")
+	}
+	deleted, err := deleteAuth("refresh_token", refreshUuid)
+	if err != nil || deleted == 0 {
+		return -1, errors.New("not authenticated (no refresh token in cache)")
+	}
+	token, err := createToken(userID, secretKey)
+	if err != nil {
+		return -1, err
+	}
+	saveErr := cacheAuth(userID, token)
+	if saveErr != nil {
+		return -1, saveErr
+	}
+	cookieAccess := getCookieAccess(ctx)
+	cookieAccess.SetToken("jwtAccess", token.AccessToken, time.Unix(token.AtExpires, 0))
+	cookieAccess.SetToken("jwtRefresh", token.RefreshToken, time.Unix(token.RtExpires, 0))
+	return userID, nil
+}
+
 // GetPasswordHash hashes a plaintext password string using argon2 and base64
 // encodes it.
-func GetPasswordHash(password string) (hashedPassword []byte, err error) {
+func (a *authSvc) GetPasswordHash(password string) (hashedPassword []byte, err error) {
 	params := newDefaultParamsObject()
 	hashedPassword, err = generateHash(password, params)
 	if err != nil {
@@ -37,7 +112,7 @@ func GetPasswordHash(password string) (hashedPassword []byte, err error) {
 // VerifyPasswordHash compares a plaintext password and a argon2 hashed and
 // base64 encoded password to confirm the plaintext password hashes into the
 // same hash.
-func VerifyPasswordHash(password string, hashedPassword []byte) (valid bool, err error) {
+func (a *authSvc) VerifyPasswordHash(password string, hashedPassword []byte) (valid bool, err error) {
 	return verifyHash(password, string(hashedPassword))
 }
 

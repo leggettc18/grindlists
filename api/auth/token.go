@@ -23,7 +23,7 @@ type TokenDetails struct {
 	RtExpires    int64
 }
 
-func CreateToken(userID int64, secret string) (*TokenDetails, error) {
+func createToken(userID int64, secret string) (*TokenDetails, error) {
 	td := &TokenDetails{}
 	td.AtExpires = time.Now().Add(time.Minute * 15).Unix()
 	td.AccessUuid = uuid.NewV4().String()
@@ -56,7 +56,7 @@ func CreateToken(userID int64, secret string) (*TokenDetails, error) {
 	return td, nil
 }
 
-func CacheAuth(userID int64, td *TokenDetails) error {
+func cacheAuth(userID int64, td *TokenDetails) error {
 	at := time.Unix(td.AtExpires, 0) // Converting Unix to UTC (Time Object)
 	rt := time.Unix(td.RtExpires, 0)
 	now := time.Now()
@@ -125,7 +125,7 @@ func setValInCtx(ctx *context.Context, val interface{}) {
 }
 
 
-func GetCookieAccess(ctx context.Context) *CookieAccess {
+func getCookieAccess(ctx context.Context) *CookieAccess {
 	return ctx.Value(cookieAccessKeyCtx).(*CookieAccess)
 }
 
@@ -211,7 +211,7 @@ func FetchAuth(ctx context.Context, authD *TokenMetaDetails) (int64, error) {
 	return userID, nil
 }
 
-func DeleteAuth(prefix string, uuid string) (int64, error) {
+func deleteAuth(prefix string, uuid string) (int64, error) {
 	cache, err := cache.NewRedisCacheInstance(prefix, time.Hour)
 	if err != nil {
 		return 0, err

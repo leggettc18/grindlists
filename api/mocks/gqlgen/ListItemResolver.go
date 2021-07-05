@@ -38,29 +38,6 @@ func (_m *ListItemResolver) Item(ctx context.Context, obj *pg.ListItem) (*pg.Ite
 	return r0, r1
 }
 
-// List provides a mock function with given fields: ctx, obj
-func (_m *ListItemResolver) List(ctx context.Context, obj *pg.ListItem) (*pg.List, error) {
-	ret := _m.Called(ctx, obj)
-
-	var r0 *pg.List
-	if rf, ok := ret.Get(0).(func(context.Context, *pg.ListItem) *pg.List); ok {
-		r0 = rf(ctx, obj)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*pg.List)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *pg.ListItem) error); ok {
-		r1 = rf(ctx, obj)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // Quantity provides a mock function with given fields: ctx, obj
 func (_m *ListItemResolver) Quantity(ctx context.Context, obj *pg.ListItem) (*int, error) {
 	ret := _m.Called(ctx, obj)
